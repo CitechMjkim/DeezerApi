@@ -29,6 +29,7 @@ import RadioScreen from './screens/RadioScreen';
 import SymphonyScreen from './screens/SymphonyScreen';
 import SettingsScreen from './screens/SettingsScreen';
 import styles from './styles';
+import { ThemeProvider, useTheme } from './ThemeContext';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -48,23 +49,34 @@ interface Album {
 }
 
 function TabNavigator() {
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
+  
   return (
     <Tab.Navigator
       screenOptions={{
         tabBarActiveTintColor: '#FF3B30',
-        tabBarInactiveTintColor: '#8E8E93',
+        tabBarInactiveTintColor: isDark ? '#666666' : '#8E8E93',
         tabBarStyle: {
           height: 83,
           paddingBottom: 20,
           paddingTop: 10,
-          backgroundColor: '#FFFFFF',
+          backgroundColor: isDark ? '#000000' : '#FFFFFF',
           borderTopWidth: 0.5,
-          borderTopColor: '#C6C6C8',
+          borderTopColor: isDark ? '#333333' : '#C6C6C8',
         },
         tabBarLabelStyle: {
           fontSize: 10,
           fontWeight: '500',
           marginTop: 4,
+          color: isDark ? '#FFFFFF' : '#000000',
+        },
+        headerStyle: {
+          backgroundColor: isDark ? '#000000' : '#FFFFFF',
+        },
+        headerTintColor: isDark ? '#FFFFFF' : '#000000',
+        headerTitleStyle: {
+          fontWeight: 'bold',
         },
       }}
     >
@@ -73,10 +85,11 @@ function TabNavigator() {
         component={HomeScreen}
         options={{
           tabBarLabel: '홈',
+          headerTitle: '홈',
           tabBarIcon: ({ focused }) => (
             <Image
               source={require('./assets/icons/main_ico_home.png')}
-              style={{ width: 24, height: 24, tintColor: focused ? '#FF3B30' : '#8E8E93' }}
+              style={{ width: 24, height: 24, tintColor: focused ? '#FF3B30' : (isDark ? '#666666' : '#8E8E93') }}
               resizeMode="contain"
             />
           ),
@@ -87,10 +100,11 @@ function TabNavigator() {
         component={RadioScreen}
         options={{
           tabBarLabel: '라디오',
+          headerTitle: '라디오',
           tabBarIcon: ({ focused }) => (
             <Image
               source={require('./assets/icons/main_ico_rad.png')}
-              style={{ width: 24, height: 24, tintColor: focused ? '#FF3B30' : '#8E8E93' }}
+              style={{ width: 24, height: 24, tintColor: focused ? '#FF3B30' : (isDark ? '#666666' : '#8E8E93') }}
               resizeMode="contain"
             />
           ),
@@ -101,10 +115,11 @@ function TabNavigator() {
         component={SymphonyScreen}
         options={{
           tabBarLabel: '심포니',
+          headerTitle: '심포니',
           tabBarIcon: ({ focused }) => (
             <Image
               source={require('./assets/icons/main_ico_symphony.png')}
-              style={{ width: 24, height: 24, tintColor: focused ? '#FF3B30' : '#8E8E93' }}
+              style={{ width: 24, height: 24, tintColor: focused ? '#FF3B30' : (isDark ? '#666666' : '#8E8E93') }}
               resizeMode="contain"
             />
           ),
@@ -115,10 +130,11 @@ function TabNavigator() {
         component={SettingsScreen}
         options={{
           tabBarLabel: '설정',
+          headerTitle: '설정',
           tabBarIcon: ({ focused }) => (
             <Image
               source={require('./assets/icons/main_ico_set.png')}
-              style={{ width: 24, height: 24, tintColor: focused ? '#FF3B30' : '#8E8E93' }}
+              style={{ width: 24, height: 24, tintColor: focused ? '#FF3B30' : (isDark ? '#666666' : '#8E8E93') }}
               resizeMode="contain"
             />
           ),
@@ -129,23 +145,26 @@ function TabNavigator() {
 }
 
 function AlbumDetailScreen({ route }: any) {
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
   const { album } = route.params;
+  
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, isDark && { backgroundColor: '#000000' }]}>
       <View style={{ alignItems: 'center', marginTop: 32 }}>
         <Image
           source={{ uri: album.album?.cover_medium || album.cover_medium }}
           style={{ width: 200, height: 200, borderRadius: 8 }}
         />
-        <Text style={{ fontSize: 24, fontWeight: 'bold', marginTop: 16 }}>{album.title}</Text>
-        <Text style={{ fontSize: 18, color: '#666', marginTop: 8 }}>{album.artist.name}</Text>
+        <Text style={[styles.screenTitle, isDark && { color: '#FFFFFF' }]}>{album.title}</Text>
+        <Text style={[styles.menuText, isDark && { color: '#CCCCCC' }]}>{album.artist.name}</Text>
         {album.duration && (
-          <Text style={{ fontSize: 16, color: '#666', marginTop: 8 }}>
+          <Text style={[styles.menuText, isDark && { color: '#CCCCCC' }]}>
             Duration: {Math.floor(album.duration / 60)}:{(album.duration % 60).toString().padStart(2, '0')}
           </Text>
         )}
         {album.preview && (
-          <Text style={{ fontSize: 16, color: '#666', marginTop: 8 }}>
+          <Text style={[styles.menuText, isDark && { color: '#CCCCCC' }]}>
             Preview available
           </Text>
         )}
@@ -154,10 +173,27 @@ function AlbumDetailScreen({ route }: any) {
   );
 }
 
-export default function App() {
+function AppContent() {
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
+
   return (
     <NavigationContainer>
-      <Stack.Navigator>
+      <StatusBar
+        barStyle={isDark ? "light-content" : "dark-content"}
+        backgroundColor={isDark ? "#000000" : "#FFFFFF"}
+      />
+      <Stack.Navigator
+        screenOptions={{
+          headerStyle: {
+            backgroundColor: isDark ? '#000000' : '#FFFFFF',
+          },
+          headerTintColor: isDark ? '#FFFFFF' : '#000000',
+          headerTitleStyle: {
+            fontWeight: 'bold',
+          },
+        }}
+      >
         <Stack.Screen
           name="MainTabs"
           component={TabNavigator}
@@ -168,16 +204,17 @@ export default function App() {
           component={AlbumDetailScreen}
           options={{
             title: 'Album Detail',
-            headerStyle: {
-              backgroundColor: '#f4511e',
-            },
-            headerTintColor: '#fff',
-            headerTitleStyle: {
-              fontWeight: 'bold',
-            },
           }}
         />
       </Stack.Navigator>
     </NavigationContainer>
+  );
+}
+
+export default function App() {
+  return (
+    <ThemeProvider>
+      <AppContent />
+    </ThemeProvider>
   );
 }

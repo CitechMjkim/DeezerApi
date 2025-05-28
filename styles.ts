@@ -1,36 +1,57 @@
 import { StyleSheet } from 'react-native';
 
-const styles = StyleSheet.create({
+export default StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#FFFFFF',
   },
   screenTitle: {
     fontSize: 24,
     fontWeight: 'bold',
-    textAlign: 'center',
-    marginTop: 20,
+    marginBottom: 16,
+    color: '#000000',
+  },
+  menuItem: {
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E5EA',
+    backgroundColor: '#FFFFFF',
+  },
+  menuText: {
+    fontSize: 16,
+    color: '#000000',
   },
   searchContainer: {
     padding: 16,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+    backgroundColor: '#F2F2F7',
   },
   searchInput: {
     height: 40,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: '#FFFFFF',
     borderRadius: 8,
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
     fontSize: 16,
-  },
-  scrollView: {
-    padding: 16,
+    color: '#000000',
+    borderWidth: 1,
+    borderColor: '#E5E5EA',
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  scrollView: {
+    flexGrow: 1,
+    backgroundColor: '#FFFFFF',
+  },
+  offlineItem: {
+    padding: 16,
+    backgroundColor: '#F2F2F7',
+    marginBottom: 8,
+  },
+  offlineText: {
+    color: '#666666',
+    fontSize: 14,
   },
   albumCard: {
     flexDirection: 'row',
@@ -71,29 +92,4 @@ const styles = StyleSheet.create({
     color: '#666',
     marginTop: 4,
   },
-  offlineItem: {
-    backgroundColor: '#ff6b6b',
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 16,
-    alignItems: 'center',
-  },
-  offlineText: {
-    color: 'white',
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
-  menuItem: {
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-    backgroundColor: '#fff',
-  },
-  menuText: {
-    fontSize: 16,
-    color: '#222',
-  },
-});
-
-export default styles; 
+}); 

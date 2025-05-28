@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { SafeAreaView, Text, TouchableOpacity, View, Modal, TextInput, Button, Alert } from 'react-native';
+import { SafeAreaView, Text, TouchableOpacity, View, Modal, TextInput, Button, Alert, Switch, StatusBar } from 'react-native';
 import styles from '../styles';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { sha1 } from '../common/utils';
 import { setupApiInterceptors } from '../common/ApiGenerator';
+import { useTheme } from '../ThemeContext';
 
 // 인터셉터 1회만 등록
 setupApiInterceptors();
@@ -15,6 +16,8 @@ export default function SettingsScreen() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [userEmail, setUserEmail] = useState<string | null>(null);
+  const { theme, toggleTheme } = useTheme();
+  const isDark = theme === 'dark';
 
   useEffect(() => {
     AsyncStorage.getItem('userEmail').then(setUserEmail);
@@ -60,52 +63,121 @@ export default function SettingsScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <Text style={styles.screenTitle}>설정</Text>
+    <SafeAreaView style={[styles.container, isDark && { backgroundColor: '#000000' }]}>
+      <StatusBar
+        barStyle={isDark ? "light-content" : "dark-content"}
+        backgroundColor={isDark ? "#000000" : "#FFFFFF"}
+      />
       <View style={{ marginTop: 32 }}>
         <TouchableOpacity
-          style={styles.menuItem}
+          style={[styles.menuItem, isDark && { backgroundColor: '#1C1C1E', borderBottomColor: '#2C2C2E' }]}
           onPress={userEmail ? handleLogout : () => setModalVisible(true)}
         >
-          <Text style={styles.menuText}>
+          <Text style={[styles.menuText, isDark && { color: '#FFFFFF' }]}>
             {userEmail ? `로그아웃     (${userEmail})` : '로그인'}
           </Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.menuItem}>
-          <Text style={styles.menuText}>언어 설정</Text>
+        <TouchableOpacity 
+          style={[styles.menuItem, isDark && { backgroundColor: '#1C1C1E', borderBottomColor: '#2C2C2E' }]}
+        >
+          <Text style={[styles.menuText, isDark && { color: '#FFFFFF' }]}>언어 설정</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.menuItem}>
-          <Text style={styles.menuText}>테마 설정</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.menuItem}>
-          <Text style={styles.menuText}>기기 설정</Text>
+        <View 
+          style={[
+            styles.menuItem, 
+            isDark && { backgroundColor: '#1C1C1E', borderBottomColor: '#2C2C2E' },
+            { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }
+          ]}
+        >
+          <Text style={[styles.menuText, isDark && { color: '#FFFFFF' }]}>테마 설정</Text>
+          <Switch 
+            value={theme === 'dark'} 
+            onValueChange={toggleTheme}
+            trackColor={{ false: '#767577', true: '#81b0ff' }}
+            thumbColor={theme === 'dark' ? '#f5dd4b' : '#f4f3f4'}
+          />
+        </View>
+        <TouchableOpacity 
+          style={[styles.menuItem, isDark && { backgroundColor: '#1C1C1E', borderBottomColor: '#2C2C2E' }]}
+        >
+          <Text style={[styles.menuText, isDark && { color: '#FFFFFF' }]}>기기 설정</Text>
         </TouchableOpacity>
       </View>
       <Modal visible={modalVisible} transparent animationType="slide">
         <View style={{
-          flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.5)'
+          flex: 1, 
+          justifyContent: 'center', 
+          alignItems: 'center', 
+          backgroundColor: 'rgba(0,0,0,0.5)'
         }}>
           <View style={{
-            backgroundColor: '#fff', padding: 24, borderRadius: 8, width: '80%'
+            backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF',
+            padding: 24,
+            borderRadius: 8,
+            width: '80%'
           }}>
-            <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 16 }}>로그인</Text>
+            <Text style={[
+              { fontSize: 18, fontWeight: 'bold', marginBottom: 16 },
+              isDark && { color: '#FFFFFF' }
+            ]}>로그인</Text>
             <TextInput
               placeholder="이메일"
+              placeholderTextColor={isDark ? '#666666' : '#999999'}
               value={email}
               onChangeText={setEmail}
-              style={{ borderWidth: 1, borderColor: '#ccc', borderRadius: 6, marginBottom: 12, padding: 8 }}
+              style={[
+                { 
+                  borderWidth: 1,
+                  borderRadius: 6,
+                  marginBottom: 12,
+                  padding: 8
+                },
+                isDark ? {
+                  backgroundColor: '#2C2C2E',
+                  borderColor: '#3C3C3E',
+                  color: '#FFFFFF'
+                } : {
+                  borderColor: '#ccc',
+                  color: '#000000'
+                }
+              ]}
               autoCapitalize="none"
               keyboardType="email-address"
             />
             <TextInput
               placeholder="비밀번호"
+              placeholderTextColor={isDark ? '#666666' : '#999999'}
               value={password}
               onChangeText={setPassword}
-              style={{ borderWidth: 1, borderColor: '#ccc', borderRadius: 6, marginBottom: 12, padding: 8 }}
-              
+              style={[
+                { 
+                  borderWidth: 1,
+                  borderRadius: 6,
+                  marginBottom: 12,
+                  padding: 8
+                },
+                isDark ? {
+                  backgroundColor: '#2C2C2E',
+                  borderColor: '#3C3C3E',
+                  color: '#FFFFFF'
+                } : {
+                  borderColor: '#ccc',
+                  color: '#000000'
+                }
+              ]}
+              secureTextEntry
             />
-            <Button title={loading ? '로그인 중...' : '로그인'} onPress={handleLogin} disabled={loading} />
-            <Button title="취소" onPress={() => setModalVisible(false)} color="#888" />
+            <Button 
+              title={loading ? '로그인 중...' : '로그인'} 
+              onPress={handleLogin} 
+              disabled={loading}
+              color={isDark ? '#81b0ff' : '#007AFF'}
+            />
+            <Button 
+              title="취소" 
+              onPress={() => setModalVisible(false)} 
+              color={isDark ? '#666666' : '#888'}
+            />
           </View>
         </View>
       </Modal>

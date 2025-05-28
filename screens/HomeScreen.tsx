@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator, Image, Keyboard, SafeAreaView, ScrollView, StatusBar,
-  Text, TextInput, TouchableOpacity, View
+  Text, TextInput, TouchableOpacity, View, FlatList
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import styles from '../styles';
+import { useTheme } from '../ThemeContext';
 
 interface Album {
   id: number;
@@ -17,6 +18,7 @@ interface Album {
   album?: {
     cover_medium: string;
   };
+  preview?: string;
   duration?: number;
 }
 
@@ -26,6 +28,8 @@ export default function HomeScreen({ navigation }: any) {
   const [searchQuery, setSearchQuery] = useState('bts');
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [isOffline, setIsOffline] = useState(false);
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
 
   const getCacheKey = (query: string) => `search_${query.toLowerCase().trim()}`;
   const getCachedData = async (query: string) => {
@@ -85,13 +89,42 @@ export default function HomeScreen({ navigation }: any) {
   const handleSearch = (text: string) => {
     setSearchQuery(text);
   };
+
+  const renderItem = ({ item }: { item: Album }) => (
+    <TouchableOpacity
+      style={[styles.menuItem, { flexDirection: 'row', alignItems: 'center' }, isDark && { backgroundColor: '#1C1C1E' }]}
+      onPress={() => navigation.navigate('AlbumDetail', { album: item })}
+    >
+      <Image
+        source={{ uri: item.album?.cover_medium || item.cover_medium }}
+        style={{ width: 50, height: 50, borderRadius: 4, marginRight: 12 }}
+      />
+      <View style={{ flex: 1 }}>
+        <Text style={[styles.menuText, isDark && { color: '#FFFFFF' }]}>{item.title}</Text>
+        <Text style={[styles.menuText, { fontSize: 14, color: isDark ? '#999999' : '#666666' }]}>
+          {item.artist.name}
+        </Text>
+      </View>
+    </TouchableOpacity>
+  );
+
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" />
-      <View style={styles.searchContainer}>
+    <SafeAreaView style={[styles.container, isDark && { backgroundColor: '#000000' }]}>
+      <StatusBar
+        barStyle={isDark ? "light-content" : "dark-content"}
+        backgroundColor={isDark ? "#000000" : "#FFFFFF"}
+      />
+      <View style={[styles.searchContainer, isDark && { backgroundColor: '#1C1C1E' }]}>
         <TextInput
-          style={styles.searchInput}
+          style={[
+            styles.searchInput,
+            isDark && {
+              backgroundColor: '#2C2C2E',
+              color: '#FFFFFF',
+            }
+          ]}
           placeholder="Search songs..."
+          placeholderTextColor={isDark ? '#666666' : '#999999'}
           value={searchQuery}
           onChangeText={handleSearch}
           returnKeyType="search"
@@ -100,36 +133,29 @@ export default function HomeScreen({ navigation }: any) {
       </View>
       {loading ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#0000ff" />
+          <ActivityIndicator size="large" color={isDark ? "#FFFFFF" : "#0000ff"} />
         </View>
       ) : (
-        <ScrollView contentContainerStyle={styles.scrollView}>
+        <ScrollView 
+          contentContainerStyle={[
+            styles.scrollView,
+            isDark && { backgroundColor: '#000000' }
+          ]}
+        >
           {isOffline && (
-            <View style={styles.offlineItem}>
-              <Text style={styles.offlineText}>오프라인 모드 - 캐시된 데이터</Text>
+            <View style={[styles.offlineItem, isDark && { backgroundColor: '#1C1C1E' }]}>
+              <Text style={[styles.offlineText, isDark && { color: '#FFFFFF' }]}>
+                오프라인 모드 - 캐시된 데이터
+              </Text>
             </View>
           )}
-          {albums.map((album) => (
-            <TouchableOpacity
-              key={album.id}
-              style={styles.albumCard}
-              onPress={() => navigation.navigate('AlbumDetail', { album })}
-            >
-              <Image
-                source={{ uri: album.album?.cover_medium || album.cover_medium }}
-                style={styles.albumCover}
-              />
-              <View style={styles.albumInfo}>
-                <Text style={styles.albumTitle}>{album.title}</Text>
-                <Text style={styles.artistName}>{album.artist.name}</Text>
-                {album.duration && (
-                  <Text style={styles.duration}>
-                    {Math.floor(album.duration / 60)}:{(album.duration % 60).toString().padStart(2, '0')}
-                  </Text>
-                )}
-              </View>
-            </TouchableOpacity>
-          ))}
+          <FlatList
+            data={albums}
+            renderItem={renderItem}
+            keyExtractor={item => item.id.toString()}
+            contentContainerStyle={{ paddingHorizontal: 16 }}
+            style={isDark && { backgroundColor: '#000000' }}
+          />
         </ScrollView>
       )}
     </SafeAreaView>
