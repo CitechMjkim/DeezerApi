@@ -83,6 +83,17 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: 'bold',
   },
+  menuItem: {
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+    backgroundColor: '#fff',
+  },
+  menuText: {
+    fontSize: 16,
+    color: '#222',
+  },
 });
 
 export default styles; 
