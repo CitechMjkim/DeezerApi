@@ -7,6 +7,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import styles from '../styles';
 import { useTheme } from '../ThemeContext';
+import { LogBox } from 'react-native';
+LogBox.ignoreAllLogs();
 
 interface Album {
   id: number;
