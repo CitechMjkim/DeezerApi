@@ -172,7 +172,7 @@ export default function SearchScreen({ navigation }: any) {
             data={albums}
             renderItem={renderItem}
             keyExtractor={item => item.id.toString()}
-            contentContainerStyle={{ paddingHorizontal: 16 }}
+            contentContainerStyle={{ paddingHorizontal: 5 }}
             style={isDark && { backgroundColor: '#000000' }}
           />
         </ScrollView>

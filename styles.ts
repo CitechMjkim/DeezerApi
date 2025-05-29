@@ -26,7 +26,7 @@ export default StyleSheet.create({
     backgroundColor: '#F2F2F7',
   },
   searchInput: {
-    height: 40,
+    height: 50,
     backgroundColor: '#FFFFFF',
     borderRadius: 8,
     paddingHorizontal: 12,
