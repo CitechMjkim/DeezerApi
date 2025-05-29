@@ -1,11 +1,30 @@
 import React, { useState, useEffect } from 'react';
-import { SafeAreaView, Text, ActivityIndicator, FlatList, View, Image, RefreshControl } from 'react-native';
+import { SafeAreaView, Text, ActivityIndicator, FlatList, View, Image, RefreshControl, Alert, TouchableOpacity } from 'react-native';
 import styles from '../styles';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../ThemeContext';
 
-interface RadioChannelData {
+interface RadioGenreData {
+  id?: number;
+  name?: string;
+  sort?: number;
+  imageUrl?: string;
+}
+
+interface RadioRegionData {
+  id?: number;
+  name?: string;
+  sort?: number;
+}
+
+interface RadioLanguageData {
+  id?: number;
+  name?: string;
+  sort?: number;
+}
+
+export interface RadioChannelData {
   id?: number;
   key?: string;
   title?: string;
@@ -21,9 +40,9 @@ interface RadioChannelData {
   favorite?: boolean;
   online?: boolean;
   memberChannel?: boolean;
-  genres?: any[];
-  regions?: any[];
-  languages?: any[];
+  genres?: RadioGenreData[];
+  regions?: RadioRegionData[];
+  languages?: RadioLanguageData[];
 }
 
 export default function RadioScreen() {
@@ -80,25 +99,55 @@ export default function RadioScreen() {
     fetchChannels();
   }, []);
 
-  const renderItem = ({ item }: { item: RadioChannelData }) => (
-    <View
-      style={[
-        styles.menuItem,
-        { flexDirection: 'row', alignItems: 'center' },
-        isDark && { backgroundColor: '#1C1C1E', borderBottomColor: '#2C2C2E' }
-      ]}
-    >
-      <Image
-        source={
-          item.imageUrl
-            ? { uri: item.imageUrl }
-            : require('../assets/icons/main_ico_fm.png')
-        }
-        style={{ width: 48, height: 48, borderRadius: 8, marginRight: 12, backgroundColor: '#eee' }}
-        resizeMode="cover"
-      />
-      <Text style={[styles.menuText, isDark && { color: '#FFFFFF' }]}>{item.title}</Text>
-    </View>
+  const handleChannelPress = async (item: RadioChannelData, index: number) => {
+    try {
+      // 저장된 기기 정보 불러오기
+      const deviceInfoStr = await AsyncStorage.getItem('deviceInfo');
+      if (!deviceInfoStr) {
+        Alert.alert('기기 미연결', '먼저 기기를 연결해주세요.');
+        return;
+      }
+      const deviceInfo = JSON.parse(deviceInfoStr);
+      const deviceIP = deviceInfo.deviceIP;
+      const roseToken = deviceInfo.deviceRoseToken;
+
+      // 전송 데이터 구성
+      const payload = {
+        data: channels, // 전체 리스트
+        currentPosition: index, // 선택한 포지션
+        roseToken: roseToken    // 토큰
+      };
+
+      await axios.post(`http://${deviceIP}:9283/rose_radio_play`, payload, {
+        headers: { 'Content-Type': 'application/json' }
+      });
+      Alert.alert('전송 성공', '기기에 라디오 재생 명령을 보냈습니다.');
+    } catch (e) {
+      Alert.alert('전송 실패', '기기에 명령을 보내지 못했습니다.');
+    }
+  };
+
+  const renderItem = ({ item, index }: { item: RadioChannelData; index: number }) => (
+    <TouchableOpacity onPress={() => handleChannelPress(item, index)}>
+      <View
+        style={[
+          styles.menuItem,
+          { flexDirection: 'row', alignItems: 'center' },
+          isDark && { backgroundColor: '#1C1C1E', borderBottomColor: '#2C2C2E' }
+        ]}
+      >
+        <Image
+          source={
+            item.imageUrl
+              ? { uri: item.imageUrl }
+              : require('../assets/icons/main_ico_fm.png')
+          }
+          style={{ width: 48, height: 48, borderRadius: 8, marginRight: 12, backgroundColor: '#eee' }}
+          resizeMode="cover"
+        />
+        <Text style={[styles.menuText, isDark && { color: '#FFFFFF' }]}>{item.title}</Text>
+      </View>
+    </TouchableOpacity>
   );
 
   return (
