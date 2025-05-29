@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator, Image, Keyboard, SafeAreaView, ScrollView, StatusBar,
-  Text, TextInput, TouchableOpacity, View, FlatList
+  Text, TextInput, TouchableOpacity, View, FlatList, RefreshControl
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
@@ -27,9 +27,10 @@ interface Album {
 export default function HomeScreen({ navigation }: any) {
   const [albums, setAlbums] = useState<Album[]>([]);
   const [loading, setLoading] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('bts');
+  const [searchQuery, setSearchQuery] = useState('beethovn');
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [isOffline, setIsOffline] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const { theme } = useTheme();
   const isDark = theme === 'dark';
 
@@ -110,6 +111,12 @@ export default function HomeScreen({ navigation }: any) {
     </TouchableOpacity>
   );
 
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchAlbums();
+    setRefreshing(false);
+  };
+
   return (
     <SafeAreaView style={[styles.container, isDark && { backgroundColor: '#000000' }]}>
       <StatusBar
@@ -143,6 +150,15 @@ export default function HomeScreen({ navigation }: any) {
             styles.scrollView,
             isDark && { backgroundColor: '#000000' }
           ]}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor={isDark ? "#FFFFFF" : "#000000"}
+              colors={isDark ? ["#FFFFFF"] : ["#000000"]}
+              progressBackgroundColor={isDark ? "#1C1C1E" : "#FFFFFF"}
+            />
+          }
         >
           {isOffline && (
             <View style={[styles.offlineItem, isDark && { backgroundColor: '#1C1C1E' }]}>

@@ -121,7 +121,7 @@ export default function RadioScreen() {
       await axios.post(`http://${deviceIP}:9283/rose_radio_play`, payload, {
         headers: { 'Content-Type': 'application/json' }
       });
-      Alert.alert('전송 성공', '기기에 라디오 재생 명령을 보냈습니다.');
+      // Alert.alert('전송 성공', '기기에 라디오 재생 명령을 보냈습니다.');
     } catch (e) {
       Alert.alert('전송 실패', '기기에 명령을 보내지 못했습니다.');
     }
