@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { SafeAreaView, Text, ActivityIndicator, FlatList, View, Image } from 'react-native';
+import { SafeAreaView, Text, ActivityIndicator, FlatList, View, Image, RefreshControl } from 'react-native';
 import styles from '../styles';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -27,35 +27,56 @@ interface RadioChannelData {
 }
 
 export default function RadioScreen() {
-  const [channels, setChannels] = useState<RadioChannelData[]>([]);
+  const [channels, setChannels] = useState<[]>([]);
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const { theme } = useTheme();
   const isDark = theme === 'dark';
 
-  useEffect(() => {
-    const fetchChannels = async () => {
-      setLoading(true);
-      try {
-        const token = await AsyncStorage.getItem('accessToken');
-        const response = await axios.get(
-          'https://api.roseaudio.kr/radio/v2/my/recent?page=0&size=30',
-          {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'If-None-Match': '*',
-              'User-Agent': 'android-com.citech.rosepremium.remote.beta-5.2.01.5',
-              'Accept-Language': 'ko_KR',
-            }
+  const fetchChannels = async () => {
+    try {
+      const token = await AsyncStorage.getItem('accessToken');
+      console.log('Fetching channels with token:', token ? 'Token exists' : 'No token');
+      
+      const response = await axios.get(
+        'https://api.roseaudio.kr/radio/v2/my/recent?page=0&size=30',
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'If-None-Match': '*',
+            'User-Agent': 'android-com.citech.rosepremium.remote.beta-5.2.01.5',
+            'Accept-Language': 'ko_KR',
           }
-        );
-        const radioChannels = response.data?.radioChannels || [];
+        }
+      );
+      
+      console.log('API Response:', response.data);
+      const radioChannels = response.data?.radioChannels || [];
+      console.log('Parsed channels:', radioChannels.length);
+      
+      if (radioChannels.length > 0) {
+        console.log('mjkim   Radio channels:', radioChannels);
         setChannels(radioChannels);
-      } catch (error) {
-        setChannels([]);
-      } finally {
-        setLoading(false);
+        console.log('Channels updated successfully');
+      } else {
+        console.log('No channels received from API');
       }
-    };
+    } catch (error) {
+      console.error('Error fetching channels:', error);
+      setChannels([]);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  const onRefresh = React.useCallback(() => {
+    setRefreshing(true);
+    fetchChannels();
+  }, []);
+
+  useEffect(() => {
+    setLoading(true);
     fetchChannels();
   }, []);
 
@@ -90,6 +111,15 @@ export default function RadioScreen() {
           renderItem={renderItem}
           keyExtractor={item => (item.id ? item.id.toString() : item.key ?? Math.random().toString())}
           style={isDark && { backgroundColor: '#000000' }}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor={isDark ? "#FFFFFF" : "#000000"}
+              colors={isDark ? ["#FFFFFF"] : ["#000000"]}
+              progressBackgroundColor={isDark ? "#1C1C1E" : "#FFFFFF"}
+            />
+          }
         />
       )}
     </SafeAreaView>
