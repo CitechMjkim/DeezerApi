@@ -28,6 +28,7 @@ import HomeScreen from './screens/HomeScreen';
 import RadioScreen from './screens/RadioScreen';
 import SymphonyScreen from './screens/SymphonyScreen';
 import SettingsScreen from './screens/SettingsScreen';
+import AlbumDetailScreen from './screens/AlbumDetailScreen';
 import styles from './styles';
 import { ThemeProvider, useTheme } from './ThemeContext';
 
@@ -141,35 +142,6 @@ function TabNavigator() {
         }}
       />
     </Tab.Navigator>
-  );
-}
-
-function AlbumDetailScreen({ route }: any) {
-  const { theme } = useTheme();
-  const isDark = theme === 'dark';
-  const { album } = route.params;
-  
-  return (
-    <SafeAreaView style={[styles.container, isDark && { backgroundColor: '#000000' }]}>
-      <View style={{ alignItems: 'center', marginTop: 32 }}>
-        <Image
-          source={{ uri: album.album?.cover_medium || album.cover_medium }}
-          style={{ width: 200, height: 200, borderRadius: 8 }}
-        />
-        <Text style={[styles.screenTitle, isDark && { color: '#FFFFFF' }]}>{album.title}</Text>
-        <Text style={[styles.menuText, isDark && { color: '#CCCCCC' }]}>{album.artist.name}</Text>
-        {album.duration && (
-          <Text style={[styles.menuText, isDark && { color: '#CCCCCC' }]}>
-            Duration: {Math.floor(album.duration / 60)}:{(album.duration % 60).toString().padStart(2, '0')}
-          </Text>
-        )}
-        {album.preview && (
-          <Text style={[styles.menuText, isDark && { color: '#CCCCCC' }]}>
-            Preview available
-          </Text>
-        )}
-      </View>
-    </SafeAreaView>
   );
 }
 

@@ -74,7 +74,7 @@ export default function HomeScreen({ navigation }: any) {
     }
     try {
       const response = await axios.get(
-        `https://api.deezer.com/search?q=${encodeURIComponent(debouncedQuery)}`
+        `https://api.deezer.com/search/album?q=${encodeURIComponent(debouncedQuery)}`
       );
       const newData = response.data.data;
       setAlbums(newData);
