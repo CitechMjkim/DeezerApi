@@ -25,6 +25,7 @@ import {
   View
 } from 'react-native';
 import HomeScreen from './screens/HomeScreen';
+import SearchScreen from './screens/SearchScreen';
 import RadioScreen from './screens/RadioScreen';
 import SymphonyScreen from './screens/SymphonyScreen';
 import SettingsScreen from './screens/SettingsScreen';
@@ -90,6 +91,21 @@ function TabNavigator() {
           tabBarIcon: ({ focused }) => (
             <Image
               source={require('./assets/icons/main_ico_home.png')}
+              style={{ width: 24, height: 24, tintColor: focused ? '#FF3B30' : (isDark ? '#666666' : '#8E8E93') }}
+              resizeMode="contain"
+            />
+          ),
+        }}
+      />
+       <Tab.Screen
+        name="Search"
+        component={SearchScreen}
+        options={{
+          tabBarLabel: '검색',
+          headerTitle: '검색',
+          tabBarIcon: ({ focused }) => (
+            <Image
+              source={require('./assets/icons/search_ico.png')}
               style={{ width: 24, height: 24, tintColor: focused ? '#FF3B30' : (isDark ? '#666666' : '#8E8E93') }}
               resizeMode="contain"
             />
@@ -173,7 +189,7 @@ function AppContent() {
         />
         <Stack.Screen
           name="AlbumDetail"
-          component={AlbumDetailScreen}
+          component={AlbumDetailScreen as React.ComponentType<any>}
           options={{
             title: 'Album Detail',
           }}
