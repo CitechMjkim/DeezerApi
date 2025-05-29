@@ -116,6 +116,21 @@ export default function SettingsScreen() {
     Alert.alert('연결 해제', '기기 연결이 해제되었습니다.');
   };
 
+  const handleClearCache = async () => {
+    try {
+      const allKeys = await AsyncStorage.getAllKeys();
+      const cacheKeys = allKeys.filter(key => key.startsWith('search_'));
+      if (cacheKeys.length > 0) {
+        await AsyncStorage.multiRemove(cacheKeys);
+        Alert.alert('완료', '오프라인(캐시) 데이터가 삭제되었습니다.');
+      } else {
+        Alert.alert('알림', '삭제할 캐시 데이터가 없습니다.');
+      }
+    } catch (e) {
+      Alert.alert('오류', '캐시 삭제 중 오류가 발생했습니다.');
+    }
+  };
+
   return (
     <SafeAreaView style={[styles.container, isDark && { backgroundColor: '#000000' }]}>
       <StatusBar
@@ -159,7 +174,12 @@ export default function SettingsScreen() {
             thumbColor={theme === 'dark' ? '#f5dd4b' : '#f4f3f4'}
           />
         </View>
-
+        <TouchableOpacity
+          style={[styles.menuItem, isDark && { backgroundColor: '#1C1C1E', borderBottomColor: '#2C2C2E' }]}
+          onPress={handleClearCache}
+        >
+          <Text style={[styles.menuText, isDark && { color: '#FFFFFF' }]}>오프라인 데이터 삭제</Text>
+        </TouchableOpacity>
       </View>
       <Modal visible={modalVisible} transparent animationType="slide">
         <View style={{
