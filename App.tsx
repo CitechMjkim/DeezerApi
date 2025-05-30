@@ -28,8 +28,11 @@ import HomeScreen from './screens/HomeScreen';
 import SearchScreen from './screens/SearchScreen';
 import RadioScreen from './screens/RadioScreen';
 import SymphonyScreen from './screens/SymphonyScreen';
+import ClassicScreen from './screens/ClassicScreen';
 import SettingsScreen from './screens/SettingsScreen';
 import AlbumDetailScreen from './screens/AlbumDetailScreen';
+import ClassicCategoryDetailScreen from './screens/ClassicCategoryDetailScreen';
+import ClassicAlbumDetailScreen from './screens/ClassicAlbumDetailScreen';
 import styles from './styles';
 import { ThemeProvider, useTheme } from './ThemeContext';
 
@@ -128,6 +131,21 @@ function TabNavigator() {
         }}
       />
       <Tab.Screen
+        name="Classic"
+        component={ClassicScreen}
+        options={{
+          tabBarLabel: '클래식',
+          headerTitle: '클래식',
+          tabBarIcon: ({ focused }) => (
+            <Image
+              source={require('./assets/icons/main_ico_tidal.png')}
+              style={{ width: 24, height: 24, tintColor: focused ? '#FF3B30' : (isDark ? '#666666' : '#8E8E93') }}
+              resizeMode="contain"
+            />
+          ),
+        }}
+      />
+      <Tab.Screen
         name="Symphony"
         component={SymphonyScreen}
         options={{
@@ -192,6 +210,20 @@ function AppContent() {
           component={AlbumDetailScreen as React.ComponentType<any>}
           options={{
             title: 'Album Detail',
+          }}
+        />
+        <Stack.Screen
+          name="ClassicCategoryDetail"
+          component={ClassicCategoryDetailScreen as React.ComponentType<any>}
+          options={{
+            title: '카테고리 전체보기',
+          }}
+        />
+        <Stack.Screen
+          name="ClassicAlbumDetail"
+          component={ClassicAlbumDetailScreen as React.ComponentType<any>}
+          options={{
+            title: '클래식 앨범 상세',
           }}
         />
       </Stack.Navigator>

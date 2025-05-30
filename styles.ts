@@ -92,4 +92,9 @@ export default StyleSheet.create({
     color: '#666',
     marginTop: 4,
   },
+  errorText: {
+    color: '#FF3B30',
+    fontSize: 16,
+    textAlign: 'center',
+  },
 }); 
