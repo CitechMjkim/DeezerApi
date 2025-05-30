@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { SafeAreaView, Text, ActivityIndicator, FlatList, View, Image, RefreshControl, Alert, TouchableOpacity } from 'react-native';
-import styles from '../styles';
-import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios from 'axios';
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, Alert, FlatList, RefreshControl, SafeAreaView, Text, TouchableOpacity, View } from 'react-native';
+import styles from '../styles';
 import { useTheme } from '../ThemeContext';
+import FastImage from 'react-native-fast-image';
 
 interface RadioGenreData {
   id?: number;
@@ -136,14 +137,14 @@ export default function RadioScreen() {
           isDark && { backgroundColor: '#1C1C1E', borderBottomColor: '#2C2C2E' }
         ]}
       >
-        <Image
+        <FastImage
           source={
             item.imageUrl
               ? { uri: item.imageUrl }
               : require('../assets/icons/main_ico_fm.png')
           }
           style={{ width: 48, height: 48, borderRadius: 8, marginRight: 12, backgroundColor: '#eee' }}
-          resizeMode="cover"
+          resizeMode={FastImage.resizeMode.cover}
         />
         <Text style={[styles.menuText, isDark && { color: '#FFFFFF' }]}>{item.title}</Text>
       </View>

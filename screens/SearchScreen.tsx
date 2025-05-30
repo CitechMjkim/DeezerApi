@@ -1,7 +1,6 @@
-
 import React, { useEffect, useState } from 'react';
 import {
-  ActivityIndicator, Image, Keyboard, SafeAreaView, ScrollView, StatusBar,
+  ActivityIndicator, Keyboard, SafeAreaView, ScrollView, StatusBar,
   Text, TextInput, TouchableOpacity, View, FlatList, RefreshControl
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -9,6 +8,7 @@ import axios from 'axios';
 import styles from '../styles';
 import { useTheme } from '../ThemeContext';
 import { LogBox } from 'react-native';
+import FastImage from 'react-native-fast-image';
 LogBox.ignoreAllLogs();
 
 interface Album {
@@ -99,9 +99,10 @@ export default function SearchScreen({ navigation }: any) {
       style={[styles.menuItem, { flexDirection: 'row', alignItems: 'center' }, isDark && { backgroundColor: '#1C1C1E' }]}
       onPress={() => navigation.navigate('AlbumDetail', { album: item })}
     >
-      <Image
+      <FastImage
         source={{ uri: item.album?.cover_medium || item.cover_medium }}
         style={{ width: 50, height: 50, borderRadius: 4, marginRight: 12 }}
+        resizeMode={FastImage.resizeMode.cover}
       />
       <View style={{ flex: 1 }}>
         <Text style={[styles.menuText, isDark && { color: '#FFFFFF' }]}>{item.title}</Text>
