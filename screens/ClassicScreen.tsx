@@ -6,6 +6,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
 import { useTheme } from '../ThemeContext';
 import ClassicAlbumDetailScreen from './ClassicAlbumDetailScreen';
+// @ts-ignore
+import FastImage from 'react-native-fast-image';
 
 interface ClassicItem {
   applemusic_thumbnail: string | null;
@@ -39,6 +41,26 @@ interface ClassicMenu {
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CLASSIC_CACHE_KEY = 'classic_api_cache';
 const CACHE_EXPIRE_MS = 1000 * 60 * 60; // 1시간
+
+function getResizedImageUrl(item: ClassicItem): string {
+  let url = item.applemusic_thumbnail || item.tidal_thumbnail || item.qobuz_thumbnail || '';
+  if (!url) return 'https://upload.wikimedia.org/wikipedia/commons/6/65/No-Image-Placeholder.svg';
+
+  if (url.startsWith('http:')) url = url.replace('http:', 'https:');
+  if (!url.startsWith('https://')) url = `https://${url}`;
+
+  if (url.includes('apple.com')) {
+    url = url.replace('/source/', '/300x300/');
+  } else if (url.includes('tidal.com')) {
+    url = url.replace('/images/', '/images/300x300/');
+  } else if (url.includes('qobuz.com')) {
+    url = url.replace('/images/', '/images/300x300/');
+  } else {
+    const separator = url.includes('?') ? '&' : '?';
+    url = `${url}${separator}width=300&height=300`;
+  }
+  return url;
+}
 
 const ClassicScreen: React.FC = () => {
   const [categories, setCategories] = useState<ClassicMenuData[]>([]);
@@ -175,10 +197,15 @@ const ClassicScreen: React.FC = () => {
                 style={[localStyles.albumCard43, { width: 300 }]}
                 onPress={() => navigation.navigate('ClassicAlbumDetail', { album: item })}
               >
-                <Image
-                  source={{ uri: item.applemusic_thumbnail || item.tidal_thumbnail || item.qobuz_thumbnail || 'https://example.com/default-cover.jpg' }}
+                <FastImage
                   style={[localStyles.albumCover43, { width: 300, height: 200 }]}
-                  defaultSource={require('../assets/icons/main_ico_cd.png')}
+                  source={{
+                    uri: getResizedImageUrl(item),
+                    priority: FastImage.priority.high,
+                    cache: FastImage.cacheControl.immutable,
+                  }}
+                  resizeMode={FastImage.resizeMode.cover}
+                  // defaultSource={require('../assets/icons/main_ico_cd.png')}
                 />
                 <Text style={localStyles.albumTitle} numberOfLines={1}>{item.title}</Text>
                 <Text style={localStyles.artistName} numberOfLines={1}>{item.artist}</Text>
@@ -215,10 +242,15 @@ const ClassicScreen: React.FC = () => {
                   style={localStyles.albumCard43}
                   onPress={() => navigation.navigate('ClassicAlbumDetail', { album: item })}
                 >
-                  <Image
-                    source={{ uri: item.applemusic_thumbnail || item.tidal_thumbnail || item.qobuz_thumbnail || 'https://example.com/default-cover.jpg' }}
+                  <FastImage
                     style={localStyles.albumCover43}
-                    defaultSource={require('../assets/icons/main_ico_cd.png')}
+                    source={{
+                      uri: getResizedImageUrl(item),
+                      priority: FastImage.priority.high,
+                      cache: FastImage.cacheControl.immutable,
+                    }}
+                    resizeMode={FastImage.resizeMode.cover}
+                    // defaultSource={require('../assets/icons/main_ico_cd.png')}
                   />
                   <Text style={localStyles.albumTitle} numberOfLines={1}>{item.title}</Text>
                   <Text style={localStyles.artistName} numberOfLines={1}>{item.artist}</Text>

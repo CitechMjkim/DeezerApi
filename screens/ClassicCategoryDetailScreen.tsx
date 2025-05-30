@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Image, StyleSheet, Dimensions } from 'react-native';
 import { RouteProp, useRoute, useNavigation } from '@react-navigation/native';
+import FastImage from 'react-native-fast-image';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -25,6 +26,26 @@ interface ClassicMenuData {
   items: ClassicItem[] | null;
 }
 
+function getResizedImageUrl(item: ClassicItem): string {
+  let url = item.applemusic_thumbnail || item.tidal_thumbnail || item.qobuz_thumbnail || '';
+  if (!url) return 'https://upload.wikimedia.org/wikipedia/commons/6/65/No-Image-Placeholder.svg';
+
+  if (url.startsWith('http:')) url = url.replace('http:', 'https:');
+  if (!url.startsWith('https://')) url = `https://${url}`;
+
+  if (url.includes('apple.com')) {
+    url = url.replace('/source/', '/300x300/');
+  } else if (url.includes('tidal.com')) {
+    url = url.replace('/images/', '/images/300x300/');
+  } else if (url.includes('qobuz.com')) {
+    url = url.replace('/images/', '/images/300x300/');
+  } else {
+    const separator = url.includes('?') ? '&' : '?';
+    url = `${url}${separator}width=300&height=300`;
+  }
+  return url;
+}
+
 const ClassicCategoryDetailScreen = () => {
   const route = useRoute();
   const navigation: any = useNavigation();
@@ -41,10 +62,15 @@ const ClassicCategoryDetailScreen = () => {
             style={styles.albumCard43}
             onPress={() => navigation.navigate('ClassicAlbumDetail', { album: item })}
           >
-            <Image
-              source={{ uri: item.applemusic_thumbnail || item.tidal_thumbnail || item.qobuz_thumbnail || 'https://example.com/default-cover.jpg' }}
+            <FastImage
               style={styles.albumCover43}
-              defaultSource={require('../assets/icons/main_ico_cd.png')}
+              source={{
+                uri: getResizedImageUrl(item),
+                priority: FastImage.priority.high,
+                cache: FastImage.cacheControl.immutable,
+              }}
+              resizeMode={FastImage.resizeMode.cover}
+              // defaultSource={require('../assets/icons/main_ico_cd.png')}
             />
             <Text style={styles.albumTitle} numberOfLines={1}>{item.title}</Text>
             <Text style={styles.artistName} numberOfLines={1}>{item.artist}</Text>
