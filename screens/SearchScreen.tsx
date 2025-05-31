@@ -9,6 +9,7 @@ import styles from '../styles';
 import { useTheme } from '../ThemeContext';
 import { LogBox } from 'react-native';
 import FastImage from 'react-native-fast-image';
+import { createCacheKey, loadCache, saveCache } from '../utils/cache';
 LogBox.ignoreAllLogs();
 
 interface Album {
@@ -35,25 +36,8 @@ export default function SearchScreen({ navigation }: any) {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
 
-  const getCacheKey = (query: string) => `search_${query.toLowerCase().trim()}`;
-  const getCachedData = async (query: string) => {
-    try {
-      const cacheKey = getCacheKey(query);
-      const cachedData = await AsyncStorage.getItem(cacheKey);
-      return cachedData ? JSON.parse(cachedData) : null;
-    } catch (error) {
-      console.error('Error getting cached data:', error);
-      return null;
-    }
-  };
-  const cacheData = async (query: string, data: any) => {
-    try {
-      const cacheKey = getCacheKey(query);
-      await AsyncStorage.setItem(cacheKey, JSON.stringify(data));
-    } catch (error) {
-      console.error('Error caching data:', error);
-    }
-  };
+  const getCacheKey = (query: string) => createCacheKey('search', query.toLowerCase().trim());
+
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedQuery(searchQuery);
@@ -67,7 +51,7 @@ export default function SearchScreen({ navigation }: any) {
   }, [debouncedQuery]);
   const fetchAlbums = async () => {
     setLoading(true);
-    const cachedData = await getCachedData(debouncedQuery);
+    const cachedData = await loadCache<Album[]>(getCacheKey(debouncedQuery));
     if (cachedData) {
       setAlbums(cachedData);
       setIsOffline(true);
@@ -80,7 +64,7 @@ export default function SearchScreen({ navigation }: any) {
       );
       const newData = response.data.data;
       setAlbums(newData);
-      await cacheData(debouncedQuery, newData);
+      await saveCache(getCacheKey(debouncedQuery), newData);
       setIsOffline(false);
     } catch (error) {
       setIsOffline(false);

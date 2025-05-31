@@ -5,6 +5,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../ThemeContext';
 import FastImage from 'react-native-fast-image';
 import axios from 'axios';
+import { createCacheKey, loadCache, saveCache } from '../utils/cache';
 
 function SectionItem({ item, type }: { item: any; type: string }) {
   const { theme } = useTheme();
@@ -256,14 +257,14 @@ export default function DetailScreen() {
   const loadingMore = useRef(false);
 
   // 캐시 키는 apiUrl+sectionKey 기준
-  const getCacheKey = () => 'detail_' + (sectionKey || '') + '_' + (apiUrl || '').replace(/[^a-zA-Z0-9]/g, '_');
+  const getCacheKey = () => createCacheKey('detail', (sectionKey || '') + '_' + (apiUrl || ''));
 
   // 캐시 불러오기
-  const loadCache = async () => {
+  const loadCachedData = async () => {
     try {
-      const cache = await AsyncStorage.getItem(getCacheKey());
-      if (cache) {
-        setData(JSON.parse(cache));
+      const cachedData = await loadCache<any[]>(getCacheKey());
+      if (cachedData) {
+        setData(cachedData);
         setLoading(false);
       }
     } catch {}
@@ -304,7 +305,7 @@ export default function DetailScreen() {
       } else {
         setData(list);
         // 캐시 저장
-        AsyncStorage.setItem(getCacheKey(), JSON.stringify(list));
+        await saveCache(getCacheKey(), list);
       }
       if (list.length < pageSize) setIsEnd(true);
       else setIsEnd(false);
@@ -319,7 +320,7 @@ export default function DetailScreen() {
   useEffect(() => {
     setPage(0);
     setLoading(true);
-    loadCache().then(() => {
+    loadCachedData().then(() => {
       // 캐시가 없으면 바로 fetch, 있으면 fetch는 백그라운드에서
       if (data.length === 0) {
         fetchData(0, false);

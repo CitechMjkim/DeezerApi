@@ -41,7 +41,7 @@ interface ClassicMenu {
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CLASSIC_CACHE_KEY = 'classic_api_cache';
 const CLASSIC_CACHE_KEY_PREFIX = 'classic_api_cache_section_';
-const CACHE_EXPIRE_MS = 1000 * 60 * 60; // 1시간
+const CACHE_EXPIRE_MS = 1000 * 60 * 60 * 24 * 7; // 1주일
 
 function getResizedImageUrl(item: ClassicItem): string {
   let url = item.applemusic_thumbnail || item.tidal_thumbnail || item.qobuz_thumbnail || '';

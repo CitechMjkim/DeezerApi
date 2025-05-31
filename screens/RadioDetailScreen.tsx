@@ -6,6 +6,7 @@ import styles from '../styles';
 import { useTheme } from '../ThemeContext';
 import FastImage from 'react-native-fast-image';
 import { useRoute } from '@react-navigation/native';
+import { createCacheKey, loadCache, saveCache } from '../utils/cache';
 
 interface RadioGenreData {
   id?: number;
@@ -62,14 +63,14 @@ export default function RadioDetailScreen() {
   const PAGE_SIZE = 20;
 
   // 캐시 키는 apiUrl 기준
-  const getCacheKey = () => 'radio_detail_' + (apiUrl || '').replace(/[^a-zA-Z0-9]/g, '_');
+  const getCacheKey = () => createCacheKey('radio_detail', apiUrl || '');
 
   // 캐시 불러오기
-  const loadCache = async () => {
+  const loadCachedData = async () => {
     try {
-      const cache = await AsyncStorage.getItem(getCacheKey());
-      if (cache) {
-        setChannels(JSON.parse(cache));
+      const cachedData = await loadCache<RadioChannelData[]>(getCacheKey());
+      if (cachedData) {
+        setChannels(cachedData);
         setLoading(false);
       }
     } catch {}
@@ -107,7 +108,7 @@ export default function RadioDetailScreen() {
       if (isRefresh || pageToLoad === 0) {
         setChannels(radioChannels);
         // 캐시 저장
-        AsyncStorage.setItem(getCacheKey(), JSON.stringify(radioChannels));
+        await saveCache(getCacheKey(), radioChannels);
       } else {
         setChannels(prev => [...prev, ...radioChannels]);
       }
@@ -129,7 +130,7 @@ export default function RadioDetailScreen() {
   useEffect(() => {
     let didCache = false;
     setLoading(true);
-    loadCache().then(() => {
+    loadCachedData().then(() => {
       didCache = true;
       // 캐시가 없으면 바로 fetch, 있으면 fetch는 백그라운드에서
       if (channels.length === 0) {

@@ -6,6 +6,7 @@ import styles from '../styles';
 import { useTheme } from '../ThemeContext';
 import FastImage from 'react-native-fast-image';
 import { useNavigation } from '@react-navigation/native';
+import { createCacheKey, loadMultipleCache, saveCache } from '../utils/cache';
 
 interface RadioGenreData {
   id?: number;
@@ -101,19 +102,14 @@ export default function RadioScreen() {
   // 캐시 불러오기
   const loadCache = async () => {
     try {
-      const [recent, favorite, recommend, popular, region] = await Promise.all([
-        AsyncStorage.getItem('radio_recent'),
-        AsyncStorage.getItem('radio_favorite'),
-        AsyncStorage.getItem('radio_recommend'),
-        AsyncStorage.getItem('radio_popular'),
-        AsyncStorage.getItem('radio_region'),
-      ]);
+      const cacheKeys = API_LIST.map(api => createCacheKey('radio', api.key));
+      const cachedData = await loadMultipleCache(cacheKeys);
       setData({
-        recent: recent ? JSON.parse(recent) : [],
-        favorite: favorite ? JSON.parse(favorite) : [],
-        recommend: recommend ? JSON.parse(recommend) : [],
-        popular: popular ? JSON.parse(popular) : [],
-        region: region ? JSON.parse(region) : [],
+        recent: cachedData[cacheKeys[0]] || [],
+        favorite: cachedData[cacheKeys[1]] || [],
+        recommend: cachedData[cacheKeys[2]] || [],
+        popular: cachedData[cacheKeys[3]] || [],
+        region: cachedData[cacheKeys[4]] || [],
       });
     } catch {}
   };
@@ -127,7 +123,7 @@ export default function RadioScreen() {
         .then(res => {
           const arr = res.data?.radioChannels || res.data?.data || [];
           setData((prev: any) => ({ ...prev, [api.key]: arr }));
-          AsyncStorage.setItem('radio_' + api.key, JSON.stringify(arr));
+          saveCache(createCacheKey('radio', api.key), arr);
         })
         .catch(() => {
           setData((prev: any) => ({ ...prev, [api.key]: [] }));
