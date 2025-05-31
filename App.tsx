@@ -57,9 +57,36 @@ interface Album {
 function TabNavigator() {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
+  const [initialRouteName, setInitialRouteName] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    // Load last selected tab
+    const loadLastTab = async () => {
+      try {
+        const lastTab = await AsyncStorage.getItem('lastSelectedTab');
+        setInitialRouteName(lastTab || 'Home');
+      } catch (error) {
+        console.error('Error loading last tab:', error);
+        setInitialRouteName('Home');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadLastTab();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: isDark ? '#000000' : '#FFFFFF' }}>
+        <ActivityIndicator size="large" color={isDark ? '#FFFFFF' : '#000000'} />
+      </View>
+    );
+  }
   
   return (
     <Tab.Navigator
+      initialRouteName={initialRouteName || 'Home'}
       screenOptions={{
         tabBarActiveTintColor: '#FF3B30',
         tabBarInactiveTintColor: isDark ? '#666666' : '#8E8E93',
@@ -83,6 +110,17 @@ function TabNavigator() {
         headerTintColor: isDark ? '#FFFFFF' : '#000000',
         headerTitleStyle: {
           fontWeight: 'bold',
+        },
+      }}
+      screenListeners={{
+        state: (e) => {
+          // Save the selected tab when it changes
+          const currentRoute = e.data.state.routes[e.data.state.index];
+          if (currentRoute) {
+            AsyncStorage.setItem('lastSelectedTab', currentRoute.name).catch(error => {
+              console.error('Error saving last tab:', error);
+            });
+          }
         },
       }}
     >
