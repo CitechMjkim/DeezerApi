@@ -87,41 +87,77 @@ function ChannelItemWide({ item, onPress, isDark }: any) {
 export default function RadioScreen() {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
-  const [data, setData] = useState<any>({});
+  const [data, setData] = useState<any>({
+    recent: [],
+    favorite: [],
+    recommend: [],
+    popular: [],
+    region: [],
+  });
   const [loading, setLoading] = useState(true);
   const navigation = useNavigation() as any;
   const [refreshing, setRefreshing] = useState(false);
 
+  // 캐시 불러오기
+  const loadCache = async () => {
+    try {
+      const [recent, favorite, recommend, popular, region] = await Promise.all([
+        AsyncStorage.getItem('radio_recent'),
+        AsyncStorage.getItem('radio_favorite'),
+        AsyncStorage.getItem('radio_recommend'),
+        AsyncStorage.getItem('radio_popular'),
+        AsyncStorage.getItem('radio_region'),
+      ]);
+      setData({
+        recent: recent ? JSON.parse(recent) : [],
+        favorite: favorite ? JSON.parse(favorite) : [],
+        recommend: recommend ? JSON.parse(recommend) : [],
+        popular: popular ? JSON.parse(popular) : [],
+        region: region ? JSON.parse(region) : [],
+      });
+    } catch {}
+  };
+
+  // 모든 섹션을 먼저 온 놈부터 바로 UI에 업데이트
   const fetchAllSections = async () => {
     setLoading(true);
     const token = await AsyncStorage.getItem('accessToken');
-    const results: any = {};
-    for (const api of API_LIST) {
-      try {
-        const res = await axios.get(api.url, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'If-None-Match': '*',
-            'User-Agent': 'android-com.citech.rosepremium.remote.beta-5.2.01.5',
-            'Accept-Language': 'ko_KR',
-          }
+    API_LIST.forEach(api => {
+      axios.get(api.url, { headers: { 'Authorization': `Bearer ${token}` } })
+        .then(res => {
+          const arr = res.data?.radioChannels || res.data?.data || [];
+          setData((prev: any) => ({ ...prev, [api.key]: arr }));
+          AsyncStorage.setItem('radio_' + api.key, JSON.stringify(arr));
+        })
+        .catch(() => {
+          setData((prev: any) => ({ ...prev, [api.key]: [] }));
+        })
+        .finally(() => {
+          // 마지막 섹션이면 로딩 해제 (모든 요청이 끝나면)
+          // 단순하게 모든 요청이 끝났는지 체크하려면, 각 섹션별로 완료 카운트 체크 필요
         });
-        results[api.key] = res.data?.radioChannels || res.data?.data || [];
-      } catch (e) {
-        results[api.key] = [];
-      }
-    }
-    setData(results);
+    });
     setLoading(false);
     setRefreshing(false);
   };
 
   useEffect(() => {
-    fetchAllSections();
+    loadCache().then(() => {
+      // 캐시가 없으면 바로 fetch, 있으면 fetch는 백그라운드에서
+      const hasCache = Object.values(data).some(arr => Array.isArray(arr) && arr.length > 0);
+      if (!hasCache) {
+        fetchAllSections();
+      } else {
+        setLoading(false);
+        fetchAllSections();
+      }
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const onRefresh = () => {
     setRefreshing(true);
+    setLoading(true);
     fetchAllSections();
   };
 
@@ -165,7 +201,8 @@ export default function RadioScreen() {
           />
         }
       >
-        {API_LIST.map(api => (
+        {/* 3개 섹션 먼저 */}
+        {[API_LIST[0], API_LIST[1], API_LIST[2]].map(api => (
           <View key={api.key} style={{ marginTop: 24 }}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16 }}>
               <Text style={{ color: isDark ? '#fff' : '#000', fontSize: 18, fontWeight: 'bold' }}>{api.title}</Text>
@@ -191,6 +228,31 @@ export default function RadioScreen() {
                     onPress={() => handleChannelPress(data[api.key], index)}
                   />
                 )
+              )}
+              showsHorizontalScrollIndicator={false}
+              style={{ marginTop: 12, paddingLeft: 16 }}
+            />
+          </View>
+        ))}
+        {/* 나머지 2개는 먼저 온 것부터 */}
+        {[API_LIST[3], API_LIST[4]].map(api => (
+          <View key={api.key} style={{ marginTop: 24 }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16 }}>
+              <Text style={{ color: isDark ? '#fff' : '#000', fontSize: 18, fontWeight: 'bold' }}>{api.title}</Text>
+              <TouchableOpacity onPress={() => navigation.navigate('RadioDetailScreen', { title: api.title, apiUrl: api.url })}>
+                <Text style={{ color: '#4faaff' }}>View All</Text>
+              </TouchableOpacity>
+            </View>
+            <FlatList
+              data={data[api.key] || []}
+              horizontal
+              keyExtractor={item => item.id?.toString() || item.key || Math.random().toString()}
+              renderItem={({ item, index }) => (
+                <ChannelItem
+                  item={item}
+                  isDark={isDark}
+                  onPress={() => handleChannelPress(data[api.key], index)}
+                />
               )}
               showsHorizontalScrollIndicator={false}
               style={{ marginTop: 12, paddingLeft: 16 }}
