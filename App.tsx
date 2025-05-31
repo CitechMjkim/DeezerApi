@@ -101,21 +101,6 @@ function TabNavigator() {
           ),
         }}
       />
-       <Tab.Screen
-        name="Search"
-        component={SearchScreen}
-        options={{
-          tabBarLabel: '검색',
-          headerTitle: '검색',
-          tabBarIcon: ({ focused }) => (
-            <Image
-              source={require('./assets/icons/search_ico.png')}
-              style={{ width: 24, height: 24, tintColor: focused ? '#FF3B30' : (isDark ? '#666666' : '#8E8E93') }}
-              resizeMode="contain"
-            />
-          ),
-        }}
-      />
       <Tab.Screen
         name="Radio"
         component={RadioScreen}
@@ -140,6 +125,21 @@ function TabNavigator() {
           tabBarIcon: ({ focused }) => (
             <Image
               source={require('./assets/icons/main_ico_tidal.png')}
+              style={{ width: 24, height: 24, tintColor: focused ? '#FF3B30' : (isDark ? '#666666' : '#8E8E93') }}
+              resizeMode="contain"
+            />
+          ),
+        }}
+      />
+         <Tab.Screen
+        name="Search"
+        component={SearchScreen}
+        options={{
+          tabBarLabel: '검색',
+          headerTitle: '검색',
+          tabBarIcon: ({ focused }) => (
+            <Image
+              source={require('./assets/icons/search_ico.png')}
               style={{ width: 24, height: 24, tintColor: focused ? '#FF3B30' : (isDark ? '#666666' : '#8E8E93') }}
               resizeMode="contain"
             />
@@ -231,6 +231,13 @@ function AppContent() {
           name="RadioDetailScreen"
           component={RadioDetailScreen}
           options={{ headerTitle: '라디오 채널' }}
+        />
+        <Stack.Screen
+          name="DetailScreen"
+          component={require('./screens/DetailScreen').default}
+          options={{
+            title: '상세보기',
+          }}
         />
       </Stack.Navigator>
     </NavigationContainer>
