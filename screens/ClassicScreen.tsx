@@ -229,7 +229,7 @@ const ClassicScreen: React.FC = () => {
           >
             <View style={localStyles.sectionHeader}>
               <Text style={[localStyles.sectionTitle, { color: isDark ? '#fff' : '#222' }]}>{category.name || '카테고리'}</Text>
-              <TouchableOpacity onPress={() => navigation.navigate('ClassicCategoryDetail', { category })}>
+              <TouchableOpacity onPress={() => navigation.navigate('ClassicCategoryViewAll', { category })}>
                 <Text style={[localStyles.viewAll, { color: isDark ? '#fff' : '#222' }]}>View All</Text>
               </TouchableOpacity>
             </View>
@@ -237,25 +237,28 @@ const ClassicScreen: React.FC = () => {
               data={pagedItems}
               horizontal
               keyExtractor={(item, itemIdx) => item.applemusic_id || item.tidal_id || item.qobuz_id || itemIdx.toString()}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  style={localStyles.albumCard43}
-                  onPress={() => navigation.navigate('ClassicAlbumDetail', { album: item })}
-                >
-                  <FastImage
-                    style={localStyles.albumCover43}
-                    source={{
-                      uri: getResizedImageUrl(item),
-                      priority: FastImage.priority.high,
-                      cache: FastImage.cacheControl.immutable,
-                    }}
-                    resizeMode={FastImage.resizeMode.cover}
-                    // defaultSource={require('../assets/icons/main_ico_cd.png')}
-                  />
-                  <Text style={localStyles.albumTitle} numberOfLines={1}>{item.title}</Text>
-                  <Text style={localStyles.artistName} numberOfLines={1}>{item.artist}</Text>
-                </TouchableOpacity>
-              )}
+              renderItem={({ item }) => {
+                console.log(`[${category.name}] Album title: ${item.title}`);
+                return (
+                  <TouchableOpacity
+                    style={localStyles.albumCard43}
+                    onPress={() => navigation.navigate('ClassicAlbumDetail', { album: item })}
+                  >
+                    <FastImage
+                      style={localStyles.albumCover43}
+                      source={{
+                        uri: getResizedImageUrl(item),
+                        priority: FastImage.priority.high,
+                        cache: FastImage.cacheControl.immutable,
+                      }}
+                      resizeMode={FastImage.resizeMode.cover}
+                    />
+                    <Text style={localStyles.albumTitle} numberOfLines={1}>{item.title}</Text>
+                    <Text style={localStyles.artistName} numberOfLines={1}>{item.artist}</Text>
+                  </TouchableOpacity>
+                )
+              }
+              }
               onEndReached={() => {
                 if (pagedItems.length < filteredItems.length) {
                   setCategoryPages(prev => ({
@@ -333,7 +336,7 @@ const localStyles = StyleSheet.create({
   albumTitle: {
     fontSize: 14,
     fontWeight: 'bold',
-    color: '#fff',
+    color: '#bbb',
     marginBottom: 2,
     width: 120,
     textAlign: 'center',

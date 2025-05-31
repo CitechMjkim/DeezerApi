@@ -31,7 +31,7 @@ import SymphonyScreen from './screens/SymphonyScreen';
 import ClassicScreen from './screens/ClassicScreen';
 import SettingsScreen from './screens/SettingsScreen';
 import AlbumDetailScreen from './screens/AlbumDetailScreen';
-import ClassicCategoryDetailScreen from './screens/ClassicCategoryDetailScreen';
+import ClassicCategoryViewAllScreen from './screens/ClassicCategoryViewAllScreen';
 import ClassicAlbumDetailScreen from './screens/ClassicAlbumDetailScreen';
 import styles from './styles';
 import { ThemeProvider, useTheme } from './ThemeContext';
@@ -213,8 +213,8 @@ function AppContent() {
           }}
         />
         <Stack.Screen
-          name="ClassicCategoryDetail"
-          component={ClassicCategoryDetailScreen as React.ComponentType<any>}
+          name="ClassicCategoryViewAll"
+          component={ClassicCategoryViewAllScreen as React.ComponentType<any>}
           options={{
             title: '카테고리 전체보기',
           }}

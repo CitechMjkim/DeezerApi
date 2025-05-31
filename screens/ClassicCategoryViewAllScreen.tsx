@@ -46,7 +46,7 @@ function getResizedImageUrl(item: ClassicItem): string {
   return url;
 }
 
-const ClassicCategoryDetailScreen = () => {
+const ClassicCategoryViewAllScreen = () => {
   const route = useRoute();
   const navigation: any = useNavigation();
   // @ts-ignore
@@ -124,4 +124,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default ClassicCategoryDetailScreen; 
+export default ClassicCategoryViewAllScreen; 
