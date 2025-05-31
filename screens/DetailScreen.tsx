@@ -255,6 +255,20 @@ export default function DetailScreen() {
   const defaultPageSize = 15;
   const loadingMore = useRef(false);
 
+  // 캐시 키는 apiUrl+sectionKey 기준
+  const getCacheKey = () => 'detail_' + (sectionKey || '') + '_' + (apiUrl || '').replace(/[^a-zA-Z0-9]/g, '_');
+
+  // 캐시 불러오기
+  const loadCache = async () => {
+    try {
+      const cache = await AsyncStorage.getItem(getCacheKey());
+      if (cache) {
+        setData(JSON.parse(cache));
+        setLoading(false);
+      }
+    } catch {}
+  };
+
   const fetchData = async (pageNum = 0, append = false) => {
     if (loadingMore.current) return;
     loadingMore.current = true;
@@ -263,6 +277,7 @@ export default function DetailScreen() {
     try {
       let url = apiUrl;
       let pageSize = (sectionKey === 'recent_artist') ? artistPageSize : defaultPageSize;
+      // 최신/인기 플레이리스트는 page/size 파라미터를 붙이지 않음
       if (sectionKey === 'latest_playlist') {
         if (url.includes('?')) {
           url += `&page=${pageNum}&size=10`;
@@ -288,6 +303,8 @@ export default function DetailScreen() {
         setData(prev => [...prev, ...list]);
       } else {
         setData(list);
+        // 캐시 저장
+        AsyncStorage.setItem(getCacheKey(), JSON.stringify(list));
       }
       if (list.length < pageSize) setIsEnd(true);
       else setIsEnd(false);
@@ -301,7 +318,16 @@ export default function DetailScreen() {
 
   useEffect(() => {
     setPage(0);
-    fetchData(0, false);
+    setLoading(true);
+    loadCache().then(() => {
+      // 캐시가 없으면 바로 fetch, 있으면 fetch는 백그라운드에서
+      if (data.length === 0) {
+        fetchData(0, false);
+      } else {
+        setLoading(false);
+        fetchData(0, false);
+      }
+    });
   }, [apiUrl]);
 
   const onRefresh = () => {

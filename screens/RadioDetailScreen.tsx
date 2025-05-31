@@ -61,6 +61,20 @@ export default function RadioDetailScreen() {
 
   const PAGE_SIZE = 20;
 
+  // 캐시 키는 apiUrl 기준
+  const getCacheKey = () => 'radio_detail_' + (apiUrl || '').replace(/[^a-zA-Z0-9]/g, '_');
+
+  // 캐시 불러오기
+  const loadCache = async () => {
+    try {
+      const cache = await AsyncStorage.getItem(getCacheKey());
+      if (cache) {
+        setChannels(JSON.parse(cache));
+        setLoading(false);
+      }
+    } catch {}
+  };
+
   const fetchChannels = async (pageToLoad = 0, isRefresh = false) => {
     try {
       if (loading || paging) return;
@@ -92,6 +106,8 @@ export default function RadioDetailScreen() {
       setHasMore(radioChannels.length === PAGE_SIZE);
       if (isRefresh || pageToLoad === 0) {
         setChannels(radioChannels);
+        // 캐시 저장
+        AsyncStorage.setItem(getCacheKey(), JSON.stringify(radioChannels));
       } else {
         setChannels(prev => [...prev, ...radioChannels]);
       }
@@ -111,7 +127,19 @@ export default function RadioDetailScreen() {
   }, [apiUrl]);
 
   useEffect(() => {
-    fetchChannels(0, true);
+    let didCache = false;
+    setLoading(true);
+    loadCache().then(() => {
+      didCache = true;
+      // 캐시가 없으면 바로 fetch, 있으면 fetch는 백그라운드에서
+      if (channels.length === 0) {
+        fetchChannels(0, true);
+      } else {
+        setLoading(false);
+        fetchChannels(0, true);
+      }
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [apiUrl]);
 
   const handleEndReached = () => {
