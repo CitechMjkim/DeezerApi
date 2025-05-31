@@ -5,6 +5,7 @@ import { ActivityIndicator, Alert, FlatList, RefreshControl, SafeAreaView, Text,
 import styles from '../styles';
 import { useTheme } from '../ThemeContext';
 import FastImage from 'react-native-fast-image';
+import { useRoute } from '@react-navigation/native';
 
 interface RadioGenreData {
   id?: number;
@@ -46,59 +47,78 @@ export interface RadioChannelData {
   languages?: RadioLanguageData[];
 }
 
-export default function RadioScreen() {
-  const [channels, setChannels] = useState<[]>([]);
+export default function RadioDetailScreen() {
+  const route = useRoute();
+  const { title, apiUrl } = route.params as { title?: string; apiUrl?: string };
+  const [channels, setChannels] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [paging, setPaging] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
   const { theme } = useTheme();
   const isDark = theme === 'dark';
 
-  const fetchChannels = async () => {
+  const PAGE_SIZE = 20;
+
+  const fetchChannels = async (pageToLoad = 0, isRefresh = false) => {
     try {
-      const token = await AsyncStorage.getItem('accessToken');
-      console.log('Fetching channels with token:', token ? 'Token exists' : 'No token');
-      
-      const response = await axios.get(
-        'https://api.roseaudio.kr/radio/v2/my/recent?page=0&size=30',
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'If-None-Match': '*',
-            'User-Agent': 'android-com.citech.rosepremium.remote.beta-5.2.01.5',
-            'Accept-Language': 'ko_KR',
-          }
-        }
-      );
-      
-      console.log('API Response:', response.data);
-      const radioChannels = response.data?.radioChannels || [];
-      console.log('Parsed channels:', radioChannels.length);
-      
-      if (radioChannels.length > 0) {
-        console.log('mjkim   Radio channels:', radioChannels);
-        setChannels(radioChannels);
-        console.log('Channels updated successfully');
+      if (loading || paging) return;
+      if (pageToLoad === 0 || isRefresh) {
+        setLoading(true);
       } else {
-        console.log('No channels received from API');
+        setPaging(true);
       }
+      const token = await AsyncStorage.getItem('accessToken');
+      // page, size 쿼리 파라미터 추가
+      let url = apiUrl || 'https://api.roseaudio.kr/radio/v2/my/recent?page=0&size=30';
+      if (url.includes('?')) {
+        url = url.replace(/([&?])page=\d+/, `$1page=${pageToLoad}`);
+        url = url.replace(/([&?])size=\d+/, `$1size=${PAGE_SIZE}`);
+        if (!/page=\d+/.test(url)) url += `&page=${pageToLoad}`;
+        if (!/size=\d+/.test(url)) url += `&size=${PAGE_SIZE}`;
+      } else {
+        url += `?page=${pageToLoad}&size=${PAGE_SIZE}`;
+      }
+      const response = await axios.get(url, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'If-None-Match': '*',
+          'User-Agent': 'android-com.citech.rosepremium.remote.beta-5.2.01.5',
+          'Accept-Language': 'ko_KR',
+        }
+      });
+      const radioChannels = response.data?.radioChannels || response.data?.data || [];
+      setHasMore(radioChannels.length === PAGE_SIZE);
+      if (isRefresh || pageToLoad === 0) {
+        setChannels(radioChannels);
+      } else {
+        setChannels(prev => [...prev, ...radioChannels]);
+      }
+      setPage(pageToLoad);
     } catch (error) {
-      console.error('Error fetching channels:', error);
-      setChannels([]);
+      if (isRefresh || pageToLoad === 0) setChannels([]);
     } finally {
       setLoading(false);
+      setPaging(false);
       setRefreshing(false);
     }
   };
 
   const onRefresh = React.useCallback(() => {
     setRefreshing(true);
-    fetchChannels();
-  }, []);
+    fetchChannels(0, true);
+  }, [apiUrl]);
 
   useEffect(() => {
-    setLoading(true);
-    fetchChannels();
-  }, []);
+    fetchChannels(0, true);
+  }, [apiUrl]);
+
+  const handleEndReached = () => {
+    if (!loading && hasMore) {
+      fetchChannels(page + 1);
+    }
+  };
 
   const handleChannelPress = async (item: RadioChannelData, index: number) => {
     try {
@@ -153,7 +173,8 @@ export default function RadioScreen() {
 
   return (
     <SafeAreaView style={[styles.container, isDark && { backgroundColor: '#000000' }]}>
-      {loading ? (
+      {title && <Text style={{ fontSize: 22, fontWeight: 'bold', color: isDark ? '#fff' : '#000', margin: 16 }}>{title}</Text>}
+      {loading && channels.length === 0 ? (
         <ActivityIndicator size="large" color={isDark ? "#FFFFFF" : "#0000ff"} />
       ) : (
         <FlatList
@@ -169,6 +190,15 @@ export default function RadioScreen() {
               colors={isDark ? ["#FFFFFF"] : ["#000000"]}
               progressBackgroundColor={isDark ? "#1C1C1E" : "#FFFFFF"}
             />
+          }
+          onEndReached={handleEndReached}
+          onEndReachedThreshold={0.7}
+          ListFooterComponent={
+            paging && channels.length > 0 ? (
+              <View style={{ height: 64, justifyContent: 'center', alignItems: 'center', backgroundColor: isDark ? '#181818' : '#fff' }}>
+                <ActivityIndicator size="large" color="#FFD700" />
+              </View>
+            ) : null
           }
         />
       )}

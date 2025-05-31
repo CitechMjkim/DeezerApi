@@ -33,6 +33,7 @@ import SettingsScreen from './screens/SettingsScreen';
 import AlbumDetailScreen from './screens/AlbumDetailScreen';
 import ClassicCategoryViewAllScreen from './screens/ClassicCategoryViewAllScreen';
 import ClassicAlbumDetailScreen from './screens/ClassicAlbumDetailScreen';
+import RadioDetailScreen from './screens/RadioDetailScreen';
 import styles from './styles';
 import { ThemeProvider, useTheme } from './ThemeContext';
 
@@ -225,6 +226,11 @@ function AppContent() {
           options={{
             title: '클래식 앨범 상세',
           }}
+        />
+        <Stack.Screen
+          name="RadioDetailScreen"
+          component={RadioDetailScreen}
+          options={{ headerTitle: '라디오 채널' }}
         />
       </Stack.Navigator>
     </NavigationContainer>
