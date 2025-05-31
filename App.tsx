@@ -22,7 +22,8 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  View
+  View,
+  Platform
 } from 'react-native';
 import HomeScreen from './screens/HomeScreen';
 import SearchScreen from './screens/SearchScreen';
@@ -54,7 +55,7 @@ interface Album {
   duration?: number;
 }
 
-function TabNavigator() {
+function TabNavigator({ setTabTitle }: { setTabTitle: (title: string) => void }) {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
   const [initialRouteName, setInitialRouteName] = useState<string | null>(null);
@@ -66,61 +67,62 @@ function TabNavigator() {
       try {
         const lastTab = await AsyncStorage.getItem('lastSelectedTab');
         setInitialRouteName(lastTab || 'Home');
+        setTabTitle(tabNameToTitle(lastTab || 'Home'));
       } catch (error) {
         console.error('Error loading last tab:', error);
         setInitialRouteName('Home');
+        setTabTitle('홈');
       } finally {
         setIsLoading(false);
       }
     };
     loadLastTab();
-  }, []);
+  }, [setTabTitle]);
+
+  // 탭 이름을 한글 타이틀로 변환
+  const tabNameToTitle = (name: string) => {
+    switch (name) {
+      case 'Home': return '홈';
+      case 'Radio': return '라디오';
+      case 'Classic': return '클래식';
+      case 'Search': return '검색';
+      case 'Symphony': return '심포니';
+      case 'Settings': return '설정';
+      default: return name;
+    }
+  };
 
   if (isLoading) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: isDark ? '#000000' : '#FFFFFF' }}>
-        <ActivityIndicator size="large" color={isDark ? '#FFFFFF' : '#000000'} />
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: isDark ? '#000' : '#fff' }}>
+        <ActivityIndicator size="large" color={isDark ? "#fff" : "#000"} />
       </View>
     );
   }
-  
+
   return (
     <Tab.Navigator
-      initialRouteName={initialRouteName || 'Home'}
+      initialRouteName={initialRouteName || undefined}
       screenOptions={{
-        tabBarActiveTintColor: '#FF3B30',
-        tabBarInactiveTintColor: isDark ? '#666666' : '#8E8E93',
+        headerShown: false,
         tabBarStyle: {
-          height: 83,
-          paddingBottom: 20,
-          paddingTop: 10,
-          backgroundColor: isDark ? '#000000' : '#FFFFFF',
-          borderTopWidth: 0.5,
-          borderTopColor: isDark ? '#333333' : '#C6C6C8',
+          backgroundColor: isDark ? '#000' : '#fff',
+          borderTopColor: isDark ? '#333' : '#eee',
+          height: Platform.OS === 'ios' ? 85 : 60,
+          paddingBottom: Platform.OS === 'ios' ? 30 : 10,
         },
+        tabBarActiveTintColor: '#4faaff',
+        tabBarInactiveTintColor: isDark ? '#666' : '#999',
         tabBarLabelStyle: {
-          fontSize: 10,
+          fontSize: 12,
           fontWeight: '500',
-          marginTop: 4,
-          color: isDark ? '#FFFFFF' : '#000000',
-        },
-        headerStyle: {
-          backgroundColor: isDark ? '#000000' : '#FFFFFF',
-        },
-        headerTintColor: isDark ? '#FFFFFF' : '#000000',
-        headerTitleStyle: {
-          fontWeight: 'bold',
         },
       }}
       screenListeners={{
         state: (e) => {
-          // Save the selected tab when it changes
           const currentRoute = e.data.state.routes[e.data.state.index];
-          if (currentRoute) {
-            AsyncStorage.setItem('lastSelectedTab', currentRoute.name).catch(error => {
-              console.error('Error saving last tab:', error);
-            });
-          }
+          AsyncStorage.setItem('lastTab', currentRoute.name);
+          setTabTitle(tabNameToTitle(currentRoute.name));
         },
       }}
     >
@@ -129,7 +131,6 @@ function TabNavigator() {
         component={HomeScreen}
         options={{
           tabBarLabel: '홈',
-          headerTitle: '홈',
           tabBarIcon: ({ focused }) => (
             <Image
               source={require('./assets/icons/main_ico_home.png')}
@@ -144,7 +145,6 @@ function TabNavigator() {
         component={RadioScreen}
         options={{
           tabBarLabel: '라디오',
-          headerTitle: '라디오',
           tabBarIcon: ({ focused }) => (
             <Image
               source={require('./assets/icons/main_ico_rad.png')}
@@ -159,7 +159,6 @@ function TabNavigator() {
         component={ClassicScreen}
         options={{
           tabBarLabel: '클래식',
-          headerTitle: '클래식',
           tabBarIcon: ({ focused }) => (
             <Image
               source={require('./assets/icons/main_ico_tidal.png')}
@@ -169,12 +168,11 @@ function TabNavigator() {
           ),
         }}
       />
-         <Tab.Screen
+      <Tab.Screen
         name="Search"
         component={SearchScreen}
         options={{
           tabBarLabel: '검색',
-          headerTitle: '검색',
           tabBarIcon: ({ focused }) => (
             <Image
               source={require('./assets/icons/search_ico.png')}
@@ -189,7 +187,6 @@ function TabNavigator() {
         component={SymphonyScreen}
         options={{
           tabBarLabel: '심포니',
-          headerTitle: '심포니',
           tabBarIcon: ({ focused }) => (
             <Image
               source={require('./assets/icons/main_ico_symphony.png')}
@@ -204,7 +201,6 @@ function TabNavigator() {
         component={SettingsScreen}
         options={{
           tabBarLabel: '설정',
-          headerTitle: '설정',
           tabBarIcon: ({ focused }) => (
             <Image
               source={require('./assets/icons/main_ico_set.png')}
@@ -221,6 +217,7 @@ function TabNavigator() {
 function AppContent() {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
+  const [tabTitle, setTabTitle] = useState('홈');
 
   return (
     <NavigationContainer>
@@ -236,13 +233,24 @@ function AppContent() {
           headerTintColor: isDark ? '#FFFFFF' : '#000000',
           headerTitleStyle: {
             fontWeight: 'bold',
+            fontSize: 20,
           },
+          headerTitle: tabTitle,
+          headerRight: () => (
+            <TouchableOpacity onPress={() => { /* 원하는 동작 추가 */ }}>
+              <Image
+                source={require('./assets/icons/device.png')}
+                style={{ width: 24, height: 24, marginRight: 16, tintColor: isDark ? '#fff' : '#222' }}
+                resizeMode="contain"
+              />
+            </TouchableOpacity>
+          ),
         }}
       >
         <Stack.Screen
           name="MainTabs"
-          component={TabNavigator}
-          options={{ headerShown: false }}
+          options={{ headerTitle: tabTitle }}
+          children={() => <TabNavigator setTabTitle={setTabTitle} />}
         />
         <Stack.Screen
           name="AlbumDetail"
