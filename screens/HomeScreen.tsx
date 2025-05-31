@@ -330,74 +330,114 @@ export default function HomeScreen() {
   const [latestPlaylistTotal, setLatestPlaylistTotal] = useState(0);
   const [popularPlaylistTotal, setPopularPlaylistTotal] = useState(0);
 
-  const fetchRecent = async () => {
-    setLoading(true);
+  const hasAnyData =
+    recentPlaylist.length > 0 ||
+    recentAlbum.length > 0 ||
+    recentYt.length > 0 ||
+    recentTrack.length > 0 ||
+    recentArtist.length > 0 ||
+    myPlaylist.length > 0 ||
+    roseRecommend.length > 0 ||
+    latestPlaylist.length > 0 ||
+    popularPlaylist.length > 0;
+
+  // 상단 2개 섹션만 먼저 fetch
+  const fetchFirstSections = async () => {
     const token = await AsyncStorage.getItem('accessToken');
     try {
-      const [playlistRes, albumRes, ytRes, trackRes, artistRes, myPlaylistRes, roseRecommendRes, latestPlaylistRes, popularPlaylistRes] = await Promise.all([
+      const [playlistRes, albumRes, ytRes] = await Promise.all([
         axios.get(RECENT_PLAYLIST_URL, { headers: { 'Authorization': `Bearer ${token}` } }),
         axios.get(RECENT_ALBUM_URL, { headers: { 'Authorization': `Bearer ${token}` } }),
         axios.get(SECTION_LIST[1].url!, { headers: { 'Authorization': `Bearer ${token}` } }),
-        axios.get(RECENT_TRACK_URL, { headers: { 'Authorization': `Bearer ${token}` } }),
-        axios.get(RECENT_ARTIST_URL, { headers: { 'Authorization': `Bearer ${token}` } }),
-        axios.get(MY_PLAYLIST_URL, { headers: { 'Authorization': `Bearer ${token}` } }),
-        axios.get(ROSE_RECOMMEND_URL, { headers: { 'Authorization': `Bearer ${token}` } }),
-        axios.get(LATEST_PLAYLIST_URL, { headers: { 'Authorization': `Bearer ${token}` } }),
-        axios.get(POPULAR_PLAYLIST_URL, { headers: { 'Authorization': `Bearer ${token}` } }),
       ]);
-      setRecentPlaylist(getListFromResponse('recent_playlist', playlistRes.data));
-      setRecentAlbum(getListFromResponse('recent_album', albumRes.data));
-      setRecentYt(getListFromResponse('recent_yt', ytRes.data));
-      setRecentTrack(getListFromResponse('recent_track', trackRes.data));
-      setRecentArtist(getListFromResponse('recent_artist', artistRes.data));
-      setMyPlaylist(getListFromResponse('my_playlist', myPlaylistRes.data));
-      setRoseRecommend(getListFromResponse('rose_recommend', roseRecommendRes.data));
-      setLatestPlaylist(getListFromResponse('latest_playlist', latestPlaylistRes.data));
-      setLatestPlaylistTotal(latestPlaylistRes.data.playlists?.length || 0);
+      const recentPlaylistData = getListFromResponse('recent_playlist', playlistRes.data);
+      const recentAlbumData = getListFromResponse('recent_album', albumRes.data);
+      const recentYtData = getListFromResponse('recent_yt', ytRes.data);
+      setRecentPlaylist(recentPlaylistData);
+      setRecentAlbum(recentAlbumData);
+      setRecentYt(recentYtData);
       setRecentAlbumTotal(albumRes.data.totalCount || (albumRes.data.recentList ? albumRes.data.recentList.length : 0));
       setRecentPlaylistTotal(playlistRes.data.totalCount || (playlistRes.data.recentList ? playlistRes.data.recentList.length : 0));
       setRecentYtTotal(ytRes.data.totalCount || (ytRes.data.tracks ? ytRes.data.tracks.length : 0));
-      setRecentTrackTotal(trackRes.data.totalCount || (trackRes.data.tracks ? trackRes.data.tracks.length : 0));
-      setRecentArtistTotal(artistRes.data.totalCount || (artistRes.data.artistDtos ? artistRes.data.artistDtos.length : 0));
-      setMyPlaylistTotal(myPlaylistRes.data.totalCount || (myPlaylistRes.data.playlists ? myPlaylistRes.data.playlists.length : 0));
-      setRoseRecommendTotal(roseRecommendRes.data.totalCount || (roseRecommendRes.data.recommends ? roseRecommendRes.data.recommends.length : 0));
-      setPopularPlaylist(getListFromResponse('popular_playlist', popularPlaylistRes.data));
-      setPopularPlaylistTotal(popularPlaylistRes.data.totalCount || 0);
     } catch {
       setRecentPlaylist([]);
       setRecentAlbum([]);
       setRecentYt([]);
-      setRecentTrack([]);
-      setRecentArtist([]);
-      setMyPlaylist([]);
-      setRoseRecommend([]);
       setRecentAlbumTotal(0);
       setRecentPlaylistTotal(0);
       setRecentYtTotal(0);
-      setRecentTrackTotal(0);
-      setRecentArtistTotal(0);
-      setMyPlaylistTotal(0);
-      setRoseRecommendTotal(0);
-      setLatestPlaylist([]);
-      setLatestPlaylistTotal(0);
-      setPopularPlaylist([]);
-      setPopularPlaylistTotal(0);
     }
-    setLoading(false);
-    setRefreshing(false);
+    setLoading(false); // 오버레이 해제
+  };
+
+  // 3번째(트랙)만 fetch
+  const fetchTrackSection = async () => {
+    const token = await AsyncStorage.getItem('accessToken');
+    try {
+      const trackRes = await axios.get(RECENT_TRACK_URL, { headers: { 'Authorization': `Bearer ${token}` } });
+      const recentTrackData = getListFromResponse('recent_track', trackRes.data);
+      setRecentTrack(recentTrackData);
+      setRecentTrackTotal(trackRes.data.totalCount || (trackRes.data.tracks ? trackRes.data.tracks.length : 0));
+    } catch {
+      setRecentTrack([]);
+      setRecentTrackTotal(0);
+    }
+  };
+
+  // 나머지 섹션 fetch (동시에 호출, 먼저 온 데이터부터 UI 업데이트)
+  const fetchRestSections = async () => {
+    const token = await AsyncStorage.getItem('accessToken');
+    axios.get(RECENT_ARTIST_URL, { headers: { 'Authorization': `Bearer ${token}` } })
+      .then(res => {
+        setRecentArtist(getListFromResponse('recent_artist', res.data));
+        setRecentArtistTotal(res.data.totalCount || (res.data.artistDtos ? res.data.artistDtos.length : 0));
+      }).catch(() => {
+        setRecentArtist([]);
+        setRecentArtistTotal(0);
+      });
+    axios.get(MY_PLAYLIST_URL, { headers: { 'Authorization': `Bearer ${token}` } })
+      .then(res => {
+        setMyPlaylist(getListFromResponse('my_playlist', res.data));
+        setMyPlaylistTotal(res.data.totalCount || (res.data.playlists ? res.data.playlists.length : 0));
+      }).catch(() => {
+        setMyPlaylist([]);
+        setMyPlaylistTotal(0);
+      });
+    axios.get(ROSE_RECOMMEND_URL, { headers: { 'Authorization': `Bearer ${token}` } })
+      .then(res => {
+        setRoseRecommend(getListFromResponse('rose_recommend', res.data));
+        setRoseRecommendTotal(res.data.totalCount || (res.data.recommends ? res.data.recommends.length : 0));
+      }).catch(() => {
+        setRoseRecommend([]);
+        setRoseRecommendTotal(0);
+      });
+    axios.get(LATEST_PLAYLIST_URL, { headers: { 'Authorization': `Bearer ${token}` } })
+      .then(res => {
+        setLatestPlaylist(getListFromResponse('latest_playlist', res.data));
+        setLatestPlaylistTotal(res.data.playlists?.length || 0);
+      }).catch(() => {
+        setLatestPlaylist([]);
+        setLatestPlaylistTotal(0);
+      });
+    axios.get(POPULAR_PLAYLIST_URL, { headers: { 'Authorization': `Bearer ${token}` } })
+      .then(res => {
+        setPopularPlaylist(getListFromResponse('popular_playlist', res.data));
+        setPopularPlaylistTotal(res.data.totalCount || 0);
+      }).catch(() => {
+        setPopularPlaylist([]);
+        setPopularPlaylistTotal(0);
+      });
   };
 
   useEffect(() => {
-    // 초기 데이터가 없을 때만 fetch
-    if (recentPlaylist.length === 0 && 
-        recentAlbum.length === 0 && 
-        recentYt.length === 0 && 
-        recentTrack.length === 0 && 
-        recentArtist.length === 0 && 
-        myPlaylist.length === 0 && 
-        roseRecommend.length === 0) {
-      fetchRecent();
-    }
+    setLoading(true);
+    setRecentPlaylist([]); setRecentAlbum([]); setRecentYt([]); setRecentTrack([]);
+    setRecentArtist([]); setMyPlaylist([]); setRoseRecommend([]); setLatestPlaylist([]); setPopularPlaylist([]);
+    fetchFirstSections().then(() => {
+      fetchTrackSection().then(() => {
+        fetchRestSections();
+      });
+    });
   }, []);
 
   useEffect(() => {
@@ -410,7 +450,7 @@ export default function HomeScreen() {
           recentArtist.length === 0 && 
           myPlaylist.length === 0 && 
           roseRecommend.length === 0) {
-        fetchRecent();
+        fetchFirstSections();
       }
     });
     return unsubscribe;
@@ -418,12 +458,22 @@ export default function HomeScreen() {
 
   const onRefresh = () => {
     setRefreshing(true);
-    fetchRecent();
+    setLoading(true);
+    setRecentPlaylist([]); setRecentAlbum([]); setRecentYt([]); setRecentTrack([]);
+    setRecentArtist([]); setMyPlaylist([]); setRoseRecommend([]); setLatestPlaylist([]); setPopularPlaylist([]);
+    fetchFirstSections().then(() => {
+      fetchTrackSection().then(() => {
+        fetchRestSections().then(() => setRefreshing(false));
+      });
+    });
   };
+
+  // 오버레이 로딩은 상단 2개 섹션이 비어있을 때만 표시
+  const showOverlayLoading = loading && (recentPlaylist.length === 0 && recentAlbum.length === 0 && recentYt.length === 0);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: isDark ? '#000000' : '#FFFFFF' }}>
-      {loading && (
+      {showOverlayLoading && (
         <View style={{
           position: 'absolute',
           top: 0,
@@ -545,14 +595,18 @@ export default function HomeScreen() {
               <Text style={{ color: '#4faaff' }}>View All</Text>
             </TouchableOpacity>
           </View>
-          <FlatList
-            data={recentArtist}
-            horizontal
-            keyExtractor={item => item.id?.toString() || item.key || Math.random().toString()}
-            renderItem={({ item }) => <RecentArtistItem item={item} />}
-            showsHorizontalScrollIndicator={false}
-            style={{ marginTop: 12, paddingLeft: 16 }}
-          />
+          {recentArtist.length === 0 ? (
+            <ActivityIndicator size="small" color={isDark ? "#fff" : "#000"} style={{ marginTop: 20 }} />
+          ) : (
+            <FlatList
+              data={recentArtist}
+              horizontal
+              keyExtractor={item => item.id?.toString() || item.key || Math.random().toString()}
+              renderItem={({ item }) => <RecentArtistItem item={item} />}
+              showsHorizontalScrollIndicator={false}
+              style={{ marginTop: 12, paddingLeft: 16 }}
+            />
+          )}
         </View>
 
         {/* My 플레이리스트 */}
@@ -563,14 +617,18 @@ export default function HomeScreen() {
               <Text style={{ color: '#4faaff' }}>View All</Text>
             </TouchableOpacity>
           </View>
-          <FlatList
-            data={myPlaylist}
-            horizontal
-            keyExtractor={item => item.id?.toString() || item.key || Math.random().toString()}
-            renderItem={({ item }) => <RecentItem item={item} type="playlist" />}
-            showsHorizontalScrollIndicator={false}
-            style={{ marginTop: 12, paddingLeft: 16 }}
-          />
+          {myPlaylist.length === 0 ? (
+            <ActivityIndicator size="small" color={isDark ? "#fff" : "#000"} style={{ marginTop: 20 }} />
+          ) : (
+            <FlatList
+              data={myPlaylist}
+              horizontal
+              keyExtractor={item => item.id?.toString() || item.key || Math.random().toString()}
+              renderItem={({ item }) => <RecentItem item={item} type="playlist" />}
+              showsHorizontalScrollIndicator={false}
+              style={{ marginTop: 12, paddingLeft: 16 }}
+            />
+          )}
         </View>
 
         {/* 로즈 추천 플레이리스트 */}
@@ -581,14 +639,18 @@ export default function HomeScreen() {
               <Text style={{ color: '#4faaff' }}>View All</Text>
             </TouchableOpacity>
           </View>
-          <FlatList
-            data={roseRecommend}
-            horizontal
-            keyExtractor={item => item.id?.toString() || item.key || Math.random().toString()}
-            renderItem={({ item }) => <RecentItem item={item} type="playlist" />}
-            showsHorizontalScrollIndicator={false}
-            style={{ marginTop: 12, paddingLeft: 16 }}
-          />
+          {roseRecommend.length === 0 ? (
+            <ActivityIndicator size="small" color={isDark ? "#fff" : "#000"} style={{ marginTop: 20 }} />
+          ) : (
+            <FlatList
+              data={roseRecommend}
+              horizontal
+              keyExtractor={item => item.id?.toString() || item.key || Math.random().toString()}
+              renderItem={({ item }) => <RecentItem item={item} type="playlist" />}
+              showsHorizontalScrollIndicator={false}
+              style={{ marginTop: 12, paddingLeft: 16 }}
+            />
+          )}
         </View>
 
         {/* 최신 플레이리스트 */}
@@ -599,14 +661,18 @@ export default function HomeScreen() {
               <Text style={{ color: '#4faaff' }}>View All</Text>
             </TouchableOpacity>
           </View>
-          <FlatList
-            data={latestPlaylist}
-            horizontal
-            keyExtractor={item => item.id?.toString() || item.key || Math.random().toString()}
-            renderItem={({ item }) => <RecentItem item={item} type="playlist" />}
-            showsHorizontalScrollIndicator={false}
-            style={{ marginTop: 12, paddingLeft: 16 }}
-          />
+          {latestPlaylist.length === 0 ? (
+            <ActivityIndicator size="small" color={isDark ? "#fff" : "#000"} style={{ marginTop: 20 }} />
+          ) : (
+            <FlatList
+              data={latestPlaylist}
+              horizontal
+              keyExtractor={item => item.id?.toString() || item.key || Math.random().toString()}
+              renderItem={({ item }) => <RecentItem item={item} type="playlist" />}
+              showsHorizontalScrollIndicator={false}
+              style={{ marginTop: 12, paddingLeft: 16 }}
+            />
+          )}
         </View>
 
         {/* 인기 플레이리스트 */}
@@ -617,14 +683,18 @@ export default function HomeScreen() {
               <Text style={{ color: '#4faaff' }}>View All</Text>
             </TouchableOpacity>
           </View>
-          <FlatList
-            data={popularPlaylist}
-            horizontal
-            keyExtractor={item => item.id?.toString() || item.key || Math.random().toString()}
-            renderItem={({ item }) => <RecentItem item={item} type="playlist" />}
-            showsHorizontalScrollIndicator={false}
-            style={{ marginTop: 12, paddingLeft: 16 }}
-          />
+          {popularPlaylist.length === 0 ? (
+            <ActivityIndicator size="small" color={isDark ? "#fff" : "#000"} style={{ marginTop: 20 }} />
+          ) : (
+            <FlatList
+              data={popularPlaylist}
+              horizontal
+              keyExtractor={item => item.id?.toString() || item.key || Math.random().toString()}
+              renderItem={({ item }) => <RecentItem item={item} type="playlist" />}
+              showsHorizontalScrollIndicator={false}
+              style={{ marginTop: 12, paddingLeft: 16 }}
+            />
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>
