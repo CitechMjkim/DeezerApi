@@ -40,6 +40,7 @@ interface ClassicMenu {
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CLASSIC_CACHE_KEY = 'classic_api_cache';
+const CLASSIC_CACHE_KEY_PREFIX = 'classic_api_cache_section_';
 const CACHE_EXPIRE_MS = 1000 * 60 * 60; // 1시간
 
 function getResizedImageUrl(item: ClassicItem): string {
@@ -78,16 +79,18 @@ const ClassicScreen: React.FC = () => {
     loadClassicCategories();
   }, []);
 
-  // 캐시에서 불러오기 + API 최신화
+  // 캐시에서 불러오기 + API 최신화 (3개 섹션 먼저, 나머지 개별)
   const loadClassicCategories = async () => {
     setLoading(true);
     let cacheLoaded = false;
+    let cachedCategories: ClassicMenuData[] = [];
     try {
       const cacheStr = await AsyncStorage.getItem(CLASSIC_CACHE_KEY);
       if (cacheStr) {
         const cache = JSON.parse(cacheStr);
         if (cache.timestamp && Date.now() - cache.timestamp < CACHE_EXPIRE_MS && cache.data) {
           setCategories(cache.data);
+          cachedCategories = cache.data;
           cacheLoaded = true;
         }
       }
@@ -106,11 +109,22 @@ const ClassicScreen: React.FC = () => {
         }
       );
       if (response.data?.new?.category) {
-        setCategories(response.data.new.category);
+        // 3개 섹션 먼저
+        const allCategories = response.data.new.category;
+        const firstThree = allCategories.slice(0, 3);
+        setCategories(firstThree.concat(cachedCategories.slice(3)));
         await AsyncStorage.setItem(
           CLASSIC_CACHE_KEY,
-          JSON.stringify({ timestamp: Date.now(), data: response.data.new.category })
+          JSON.stringify({ timestamp: Date.now(), data: allCategories })
         );
+        // 나머지 카테고리 개별 업데이트
+        for (let i = 3; i < allCategories.length; i++) {
+          setCategories(prev => {
+            const updated = [...prev];
+            updated[i] = allCategories[i];
+            return updated;
+          });
+        }
       } else {
         if (!cacheLoaded) setError('데이터 형식이 올바르지 않습니다.');
       }
@@ -121,7 +135,7 @@ const ClassicScreen: React.FC = () => {
     }
   };
 
-  // 강제 갱신(캐시 무시)
+  // 강제 갱신(캐시 무시, 3개 섹션 먼저, 나머지 개별)
   const refreshClassicCategories = useCallback(async () => {
     setRefreshing(true);
     try {
@@ -138,18 +152,27 @@ const ClassicScreen: React.FC = () => {
         }
       );
       if (response.data?.new?.category) {
-        setCategories(response.data.new.category);
+        const allCategories = response.data.new.category;
+        const firstThree = allCategories.slice(0, 3);
+        setCategories(firstThree.concat(categories.slice(3)));
         await AsyncStorage.setItem(
           CLASSIC_CACHE_KEY,
-          JSON.stringify({ timestamp: Date.now(), data: response.data.new.category })
+          JSON.stringify({ timestamp: Date.now(), data: allCategories })
         );
+        for (let i = 3; i < allCategories.length; i++) {
+          setCategories(prev => {
+            const updated = [...prev];
+            updated[i] = allCategories[i];
+            return updated;
+          });
+        }
       }
     } catch (err) {
       // 네트워크 에러 시 무시
     } finally {
       setRefreshing(false);
     }
-  }, []);
+  }, [categories]);
 
   if (loading && categories.length === 0) {
     return (
